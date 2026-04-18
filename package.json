@@ -1,0 +1,35 @@
+{
+  "name": "student-result-analysis-system",
+  "version": "1.0.0",
+  "description": "Beginner-friendly full-stack mini project for managing students, marks, attendance, semester results, and analytics.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node scripts/seed.js",
+    "sync:warehouse": "node scripts/syncWarehouse.js"
+  },
+  "keywords": [
+    "student-result-analysis",
+    "express",
+    "mongodb",
+    "mongoose",
+    "chartjs"
+  ],
+  "author": "OpenAI Codex",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "method-override": "^3.0.0",
+    "mongoose": "^8.9.5",
+    "pdfkit": "^0.15.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

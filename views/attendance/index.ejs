@@ -1,0 +1,66 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="page-toolbar">
+  <form class="search-form" method="GET" action="/attendance">
+    <input
+      type="text"
+      name="search"
+      placeholder="Search by roll number, student name, subject"
+      value="<%= search %>"
+    />
+    <button type="submit" class="btn btn-secondary">Search</button>
+  </form>
+
+  <a class="btn btn-primary" href="/attendance/new">Add Attendance</a>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>Attendance Records</h3>
+      <p>Attendance percentage is calculated automatically.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" data-live-filter>
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Total Classes</th>
+          <th>Present</th>
+          <th>Attendance %</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!attendanceRecords.length) { %>
+          <tr><td colspan="7" class="empty-state">No attendance records found.</td></tr>
+        <% } %>
+        <% attendanceRecords.forEach((record) => { %>
+          <tr>
+            <td><%= record.rollNumber %></td>
+            <td><%= record.studentName %></td>
+            <td><%= record.subjectName %></td>
+            <td><%= record.totalClasses %></td>
+            <td><%= record.presentClasses %></td>
+            <td><%= record.attendancePercentage %>%</td>
+            <td class="actions">
+              <a class="btn btn-small btn-secondary" href="/attendance/<%= record._id %>/edit">Edit</a>
+              <form action="/attendance/<%= record._id %>?_method=DELETE" method="POST">
+                <button type="submit" class="btn btn-small btn-danger" data-confirm="Delete this attendance record?">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../partials/shell-end') %>

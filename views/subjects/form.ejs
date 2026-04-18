@@ -1,0 +1,59 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3><%= subject._id ? 'Edit Subject' : 'Add Subject' %></h3>
+      <p>Keep subject details aligned with department, course, and semester.</p>
+    </div>
+  </div>
+
+  <form action="<%= formAction %>" method="<%= formMethod %>" class="form-grid">
+    <label>
+      Subject Code
+      <input type="text" name="subjectCode" value="<%= subject.subjectCode || '' %>" required />
+    </label>
+
+    <label>
+      Subject Name
+      <input type="text" name="subjectName" value="<%= subject.subjectName || '' %>" required />
+    </label>
+
+    <label>
+      Department
+      <select name="department" required>
+        <option value="">Select department</option>
+        <% departments.forEach((department) => { %>
+          <option value="<%= department.name %>" <%= subject.department === department.name ? 'selected' : '' %>>
+            <%= department.name %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label>
+      Course
+      <select name="course" required>
+        <option value="">Select course</option>
+        <% courses.forEach((course) => { %>
+          <option value="<%= course.name %>" <%= subject.course === course.name ? 'selected' : '' %>>
+            <%= course.name %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label>
+      Semester
+      <input type="number" name="semester" min="1" max="8" value="<%= subject.semester || '' %>" required />
+    </label>
+
+    <div class="form-actions form-span">
+      <a href="/subjects" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Subject</button>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/shell-end') %>

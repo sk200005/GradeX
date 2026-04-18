@@ -1,0 +1,83 @@
+<%- include('partials/head', { pageTitle }) %>
+<%- include('partials/shell-start', { pageTitle }) %>
+
+<section class="hero-panel">
+  <div>
+    <span class="eyebrow">Overview</span>
+    <h3>Welcome to the academic analytics dashboard</h3>
+    <p>
+      Track student records, semester outcomes, attendance, and performance
+      trends from one place.
+    </p>
+  </div>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="/students/new">Add Student</a>
+    <a class="btn btn-secondary" href="/reports">View Reports</a>
+  </div>
+</section>
+
+<section class="stat-grid">
+  <article class="stat-card">
+    <p>Total Students</p>
+    <h3><%= summary.totalStudents %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Total Subjects</p>
+    <h3><%= summary.totalSubjects %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Passed Students</p>
+    <h3><%= summary.passedStudents %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Failed Students</p>
+    <h3><%= summary.failedStudents %></h3>
+  </article>
+  <article class="stat-card accent-card">
+    <p>Average Attendance</p>
+    <h3><%= summary.averageAttendance %>%</h3>
+  </article>
+</section>
+
+<section class="chart-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Top Students by Marks</h3>
+    </div>
+    <canvas id="topStudentsChart"></canvas>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Subject-wise Pass/Fail</h3>
+    </div>
+    <canvas id="subjectPassFailChart"></canvas>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Attendance vs Marks</h3>
+    </div>
+    <canvas id="attendanceMarksChart"></canvas>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Department Performance</h3>
+    </div>
+    <canvas id="departmentPerformanceChart"></canvas>
+  </article>
+
+  <article class="panel panel-wide">
+    <div class="panel-heading">
+      <h3>Semester Result Analysis</h3>
+    </div>
+    <canvas id="semesterResultChart"></canvas>
+  </article>
+</section>
+
+<script>
+  window.dashboardData = <%- JSON.stringify(charts) %>;
+</script>
+
+<%- include('partials/shell-end') %>

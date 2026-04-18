@@ -1,0 +1,72 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="page-toolbar">
+  <form class="search-form" method="GET" action="/students">
+    <input
+      type="text"
+      name="search"
+      placeholder="Search by roll number, name, department, course"
+      value="<%= search %>"
+    />
+    <button type="submit" class="btn btn-secondary">Search</button>
+  </form>
+
+  <a class="btn btn-primary" href="/students/new">Add Student</a>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>All Students</h3>
+      <p><%= pagination.totalItems %> records found</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" data-live-filter>
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Course</th>
+          <th>Semester</th>
+          <th>City</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!students.length) { %>
+          <tr>
+            <td colspan="7" class="empty-state">No students found.</td>
+          </tr>
+        <% } %>
+
+        <% students.forEach((student) => { %>
+          <tr>
+            <td><%= student.rollNumber %></td>
+            <td><%= student.fullName %></td>
+            <td><%= student.department %></td>
+            <td><%= student.course %></td>
+            <td>Semester <%= student.semester %></td>
+            <td><%= student.city %></td>
+            <td class="actions">
+              <a class="btn btn-small" href="/students/<%= student._id %>">View</a>
+              <a class="btn btn-small btn-secondary" href="/students/<%= student._id %>/edit">Edit</a>
+              <form action="/students/<%= student._id %>?_method=DELETE" method="POST">
+                <button type="submit" class="btn btn-small btn-danger" data-confirm="Delete this student and related records?">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <%- include('../partials/pagination', { pagination, search }) %>
+</section>
+
+<%- include('../partials/shell-end') %>

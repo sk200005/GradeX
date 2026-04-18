@@ -1,0 +1,69 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="page-toolbar">
+  <form class="search-form" method="GET" action="/subjects">
+    <input
+      type="text"
+      name="search"
+      placeholder="Search by subject code, name, department, course"
+      value="<%= search %>"
+    />
+    <button type="submit" class="btn btn-secondary">Search</button>
+  </form>
+
+  <a class="btn btn-primary" href="/subjects/new">Add Subject</a>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>All Subjects</h3>
+      <p><%= pagination.totalItems %> records found</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" data-live-filter>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Course</th>
+          <th>Semester</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!subjects.length) { %>
+          <tr>
+            <td colspan="6" class="empty-state">No subjects found.</td>
+          </tr>
+        <% } %>
+
+        <% subjects.forEach((subject) => { %>
+          <tr>
+            <td><%= subject.subjectCode %></td>
+            <td><%= subject.subjectName %></td>
+            <td><%= subject.department %></td>
+            <td><%= subject.course %></td>
+            <td>Semester <%= subject.semester %></td>
+            <td class="actions">
+              <a class="btn btn-small btn-secondary" href="/subjects/<%= subject._id %>/edit">Edit</a>
+              <form action="/subjects/<%= subject._id %>?_method=DELETE" method="POST">
+                <button type="submit" class="btn btn-small btn-danger" data-confirm="Delete this subject and related records?">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <%- include('../partials/pagination', { pagination, search }) %>
+</section>
+
+<%- include('../partials/shell-end') %>

@@ -1,0 +1,239 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="hero-panel">
+  <div>
+    <span class="eyebrow">Reports & Analytics</span>
+    <h3>Operational reports plus warehouse concepts</h3>
+    <p>
+      This page combines practical reporting with STAR SCHEMA and SNOWFLAKE
+      SCHEMA concepts using separate MongoDB collections.
+    </p>
+  </div>
+  <div class="hero-actions">
+    <a class="btn btn-secondary" href="/reports/top-students/pdf">Export Top Students PDF</a>
+    <form action="/reports/sync-warehouse" method="POST">
+      <button type="submit" class="btn btn-primary">Sync Warehouse</button>
+    </form>
+  </div>
+</section>
+
+<section class="stat-grid">
+  <article class="stat-card">
+    <p>Fact Results</p>
+    <h3><%= warehouseSummary.factResults %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Dim Students</p>
+    <h3><%= warehouseSummary.dimStudents %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Dim Subjects</p>
+    <h3><%= warehouseSummary.dimSubjects %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Dim Time</p>
+    <h3><%= warehouseSummary.dimTime %></h3>
+  </article>
+  <article class="stat-card accent-card">
+    <p>Dim Departments</p>
+    <h3><%= warehouseSummary.dimDepartments %></h3>
+  </article>
+</section>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>STAR Schema</h3>
+    </div>
+    <p>
+      The warehouse uses <strong>fact_results</strong> as the central fact table
+      with metrics like marks, attendance, and pass/fail. It connects to
+      <strong>dim_students</strong>, <strong>dim_subjects</strong>,
+      <strong>dim_time</strong>, and <strong>dim_departments</strong>.
+    </p>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Snowflake Schema</h3>
+    </div>
+    <p>
+      The normalized design breaks dimensions further into
+      <strong>cities</strong>, <strong>states</strong>, <strong>departments</strong>,
+      and <strong>courses</strong>. This models
+      <strong>Student → City → State</strong> and
+      <strong>Subject → Department → Course</strong>.
+    </p>
+  </article>
+</section>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Top 10 Students</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Average Marks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.topTenStudents.forEach((student, index) => { %>
+            <tr>
+              <td><%= index + 1 %></td>
+              <td><%= student.fullName %></td>
+              <td><%= student.department %></td>
+              <td><%= student.averageMarks.toFixed(2) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Department Toppers</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Student</th>
+            <th>Roll No</th>
+            <th>Highest Marks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.departmentToppers.forEach((item) => { %>
+            <tr>
+              <td><%= item._id %></td>
+              <td><%= item.studentName %></td>
+              <td><%= item.rollNumber %></td>
+              <td><%= item.highestMarks %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Failed Students by Subject</h3>
+    </div>
+    <div class="report-list">
+      <% if (!reports.failedStudentsBySubject.length) { %>
+        <p>No failed students found.</p>
+      <% } %>
+      <% reports.failedStudentsBySubject.forEach((subject) => { %>
+        <div class="report-card">
+          <h4><%= subject._id %> (<%= subject.failCount %>)</h4>
+          <p>
+            <% subject.students.forEach((student, index) => { %>
+              <%= student.studentName %> - <%= student.rollNumber %> - <%= student.marks %><%= index !== subject.students.length - 1 ? ', ' : '' %>
+            <% }) %>
+          </p>
+        </div>
+      <% }) %>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Low Attendance Students (&lt; 75%)</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Student</th>
+            <th>Subject</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!reports.lowAttendanceStudents.length) { %>
+            <tr><td colspan="4" class="empty-state">No low attendance records found.</td></tr>
+          <% } %>
+          <% reports.lowAttendanceStudents.forEach((item) => { %>
+            <tr>
+              <td><%= item.rollNumber %></td>
+              <td><%= item.studentName %></td>
+              <td><%= item.subjectName %></td>
+              <td><%= item.attendancePercentage %>%</td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Average Marks by Subject</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Average Marks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.averageMarksBySubject.forEach((item) => { %>
+            <tr>
+              <td><%= item._id %></td>
+              <td><%= item.averageMarks.toFixed(2) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Semester Wise Results</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Semester</th>
+            <th>Total Students</th>
+            <th>Pass Count</th>
+            <th>Fail Count</th>
+            <th>Average CGPA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.semesterWiseResults.forEach((item) => { %>
+            <tr>
+              <td><%= item._id %></td>
+              <td><%= item.totalStudents %></td>
+              <td><%= item.passCount %></td>
+              <td><%= item.failCount %></td>
+              <td><%= item.averageCgpa.toFixed(2) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/shell-end') %>

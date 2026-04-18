@@ -1,0 +1,130 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="detail-hero">
+  <div>
+    <span class="eyebrow">Student Profile</span>
+    <h3><%= student.fullName %></h3>
+    <p><%= student.rollNumber %> • <%= student.department %> • Semester <%= student.semester %></p>
+  </div>
+  <div class="hero-actions">
+    <a href="/students/<%= student._id %>/edit" class="btn btn-secondary">Edit Profile</a>
+    <a href="/marks/marksheet/<%= student._id %>" class="btn btn-primary" target="_blank">Print Marksheet</a>
+  </div>
+</section>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Contact Information</h3>
+    </div>
+    <div class="info-list">
+      <p><strong>Email:</strong> <%= student.email %></p>
+      <p><strong>Phone:</strong> <%= student.phone %></p>
+      <p><strong>Gender:</strong> <%= student.gender %></p>
+      <p><strong>Course:</strong> <%= student.course %></p>
+      <p><strong>Location:</strong> <%= student.city %>, <%= student.state %></p>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Semester Results</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Semester</th>
+            <th>SGPA</th>
+            <th>CGPA</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!semesterResults.length) { %>
+            <tr><td colspan="4" class="empty-state">No semester results added.</td></tr>
+          <% } %>
+          <% semesterResults.forEach((item) => { %>
+            <tr>
+              <td><%= item.semester %></td>
+              <td><%= item.sgpa %></td>
+              <td><%= item.cgpa %></td>
+              <td><span class="badge <%= item.resultStatus === 'Pass' ? 'badge-success' : 'badge-danger' %>"><%= item.resultStatus %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Marks Records</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Internal</th>
+            <th>External</th>
+            <th>Total</th>
+            <th>Grade</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!marks.length) { %>
+            <tr><td colspan="6" class="empty-state">No marks records available.</td></tr>
+          <% } %>
+          <% marks.forEach((mark) => { %>
+            <tr>
+              <td><%= mark.subjectName %></td>
+              <td><%= mark.internalMarks %></td>
+              <td><%= mark.externalMarks %></td>
+              <td><%= mark.totalMarks %></td>
+              <td><%= mark.grade %></td>
+              <td><span class="badge <%= mark.resultStatus === 'Pass' ? 'badge-success' : 'badge-danger' %>"><%= mark.resultStatus %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Attendance Records</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table compact-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Total Classes</th>
+            <th>Present</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!attendanceRecords.length) { %>
+            <tr><td colspan="4" class="empty-state">No attendance records available.</td></tr>
+          <% } %>
+          <% attendanceRecords.forEach((record) => { %>
+            <tr>
+              <td><%= record.subjectName %></td>
+              <td><%= record.totalClasses %></td>
+              <td><%= record.presentClasses %></td>
+              <td><%= record.attendancePercentage %>%</td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/shell-end') %>

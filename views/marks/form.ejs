@@ -1,0 +1,79 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3><%= mark._id ? 'Edit Marks' : 'Add Marks' %></h3>
+      <p>Total marks, grade, and pass/fail status are auto-calculated from the entered values.</p>
+    </div>
+    <div class="metric-preview">
+      <span data-mark-preview>Total: -- | Grade: -- | Status: --</span>
+    </div>
+  </div>
+
+  <form action="<%= formAction %>" method="<%= formMethod %>" class="form-grid">
+    <label>
+      Student
+      <select name="student" required>
+        <option value="">Select student</option>
+        <% students.forEach((studentItem) => { %>
+          <option
+            value="<%= studentItem._id %>"
+            <%= String(mark.student || '') === String(studentItem._id) ? 'selected' : '' %>
+          >
+            <%= studentItem.rollNumber %> - <%= studentItem.fullName %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label>
+      Subject
+      <select name="subject" required>
+        <option value="">Select subject</option>
+        <% subjects.forEach((subjectItem) => { %>
+          <option
+            value="<%= subjectItem._id %>"
+            <%= String(mark.subject || '') === String(subjectItem._id) ? 'selected' : '' %>
+          >
+            <%= subjectItem.subjectCode %> - <%= subjectItem.subjectName %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label>
+      Internal Marks
+      <input
+        type="number"
+        name="internalMarks"
+        min="0"
+        max="100"
+        value="<%= mark.internalMarks || '' %>"
+        data-mark-input
+        required
+      />
+    </label>
+
+    <label>
+      External Marks
+      <input
+        type="number"
+        name="externalMarks"
+        min="0"
+        max="100"
+        value="<%= mark.externalMarks || '' %>"
+        data-mark-input
+        required
+      />
+    </label>
+
+    <div class="form-actions form-span">
+      <a href="/marks" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Marks</button>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/shell-end') %>

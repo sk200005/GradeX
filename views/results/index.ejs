@@ -1,0 +1,189 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="detail-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Add Semester Result</h3>
+        <p>SGPA and CGPA must be between 0 and 10.</p>
+      </div>
+    </div>
+
+    <form action="/results" method="POST" class="form-grid">
+      <label>
+        Student
+        <select name="student" required>
+          <option value="">Select student</option>
+          <% students.forEach((student) => { %>
+            <option value="<%= student._id %>">
+              <%= student.rollNumber %> - <%= student.fullName %>
+            </option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label>
+        Semester
+        <input type="number" name="semester" min="1" max="8" required />
+      </label>
+
+      <label>
+        SGPA
+        <input type="number" name="sgpa" min="0" max="10" step="0.01" required />
+      </label>
+
+      <label>
+        CGPA
+        <input type="number" name="cgpa" min="0" max="10" step="0.01" required />
+      </label>
+
+      <label>
+        Result Status
+        <select name="resultStatus" required>
+          <option value="">Select status</option>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </label>
+
+      <div class="form-actions form-span">
+        <button type="submit" class="btn btn-primary">Add Result</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Search Results</h3>
+        <p>Filter by roll number, student, or department.</p>
+      </div>
+    </div>
+
+    <form class="search-form" method="GET" action="/results">
+      <input
+        type="text"
+        name="search"
+        placeholder="Search semester results"
+        value="<%= search %>"
+      />
+      <button type="submit" class="btn btn-secondary">Search</button>
+    </form>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>Semester Result Records</h3>
+      <p>Use edit to update any existing result.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Student</th>
+          <th>Department</th>
+          <th>Semester</th>
+          <th>SGPA</th>
+          <th>CGPA</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!results.length) { %>
+          <tr><td colspan="8" class="empty-state">No semester results found.</td></tr>
+        <% } %>
+        <% results.forEach((result) => { %>
+          <tr>
+            <td><%= result.rollNumber %></td>
+            <td><%= result.studentName %></td>
+            <td><%= result.department %></td>
+            <td><%= result.semester %></td>
+            <td><%= result.sgpa %></td>
+            <td><%= result.cgpa %></td>
+            <td><span class="badge <%= result.resultStatus === 'Pass' ? 'badge-success' : 'badge-danger' %>"><%= result.resultStatus %></span></td>
+            <td class="actions">
+              <button
+                type="button"
+                class="btn btn-small btn-secondary edit-result-btn"
+                data-modal-target="result-modal"
+                data-id="<%= result._id %>"
+                data-student="<%= result.student %>"
+                data-semester="<%= result.semester %>"
+                data-sgpa="<%= result.sgpa %>"
+                data-cgpa="<%= result.cgpa %>"
+                data-status="<%= result.resultStatus %>"
+              >
+                Edit
+              </button>
+              <form action="/results/<%= result._id %>?_method=DELETE" method="POST">
+                <button type="submit" class="btn btn-small btn-danger" data-confirm="Delete this semester result?">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="modal" id="result-modal">
+  <div class="modal-card">
+    <div class="panel-heading">
+      <h3>Edit Semester Result</h3>
+      <button type="button" class="icon-button" data-modal-close>Close</button>
+    </div>
+
+    <form id="result-edit-form" method="POST" class="form-grid">
+      <label>
+        Student
+        <select name="student" id="edit-student" required>
+          <option value="">Select student</option>
+          <% students.forEach((student) => { %>
+            <option value="<%= student._id %>">
+              <%= student.rollNumber %> - <%= student.fullName %>
+            </option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label>
+        Semester
+        <input type="number" name="semester" id="edit-semester" min="1" max="8" required />
+      </label>
+
+      <label>
+        SGPA
+        <input type="number" name="sgpa" id="edit-sgpa" min="0" max="10" step="0.01" required />
+      </label>
+
+      <label>
+        CGPA
+        <input type="number" name="cgpa" id="edit-cgpa" min="0" max="10" step="0.01" required />
+      </label>
+
+      <label>
+        Result Status
+        <select name="resultStatus" id="edit-status" required>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </label>
+
+      <div class="form-actions form-span">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Result</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/shell-end') %>

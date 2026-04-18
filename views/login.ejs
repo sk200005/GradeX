@@ -1,0 +1,43 @@
+<%- include('partials/head', { pageTitle }) %>
+<body class="auth-body">
+  <section class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-copy">
+        <span class="eyebrow">Mini Project</span>
+        <h1>Student Result Analysis System</h1>
+        <p>
+          Manage students, subjects, marks, attendance, semester results, and
+          analytics from one clean dashboard.
+        </p>
+        <div class="credential-box">
+          <strong>Default Login</strong>
+          <p>Username: <span>admin</span></p>
+          <p>Password: <span>admin123</span></p>
+        </div>
+      </div>
+
+      <div class="auth-form-panel">
+        <h2>Admin Login</h2>
+        <p>Use the default credentials or your seeded admin account.</p>
+        <%- include('partials/flash') %>
+
+        <form action="/login" method="POST" class="form-card">
+          <label>
+            Username
+            <input type="text" name="username" placeholder="Enter username" required />
+          </label>
+
+          <label>
+            Password
+            <input type="password" name="password" placeholder="Enter password" required />
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

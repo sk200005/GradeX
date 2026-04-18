@@ -1,0 +1,12 @@
+<% if (pagination.totalPages > 1) { %>
+  <nav class="pagination">
+    <% for (let pageNumber = 1; pageNumber <= pagination.totalPages; pageNumber += 1) { %>
+      <a
+        class="<%= pagination.page === pageNumber ? 'active' : '' %>"
+        href="?page=<%= pageNumber %><%= search ? `&search=${encodeURIComponent(search)}` : '' %>"
+      >
+        <%= pageNumber %>
+      </a>
+    <% } %>
+  </nav>
+<% } %>

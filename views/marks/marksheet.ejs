@@ -1,0 +1,62 @@
+<%- include('../partials/head', { pageTitle }) %>
+<body class="print-body">
+  <section class="marksheet">
+    <div class="marksheet-header">
+      <div>
+        <span class="eyebrow">Printable Marksheet</span>
+        <h1>Student Result Analysis System</h1>
+        <p><strong><%= student.fullName %></strong> | <%= student.rollNumber %></p>
+        <p><%= student.department %> | <%= student.course %> | Semester <%= student.semester %></p>
+      </div>
+      <div class="hero-actions no-print">
+        <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+        <a href="/students/<%= student._id %>" class="btn btn-secondary">Back</a>
+      </div>
+    </div>
+
+    <div class="marksheet-summary">
+      <div class="summary-box">
+        <span>Average Marks</span>
+        <strong><%= averageMarks %></strong>
+      </div>
+      <div class="summary-box">
+        <span>SGPA</span>
+        <strong><%= semesterResult ? semesterResult.sgpa : 'N/A' %></strong>
+      </div>
+      <div class="summary-box">
+        <span>CGPA</span>
+        <strong><%= semesterResult ? semesterResult.cgpa : 'N/A' %></strong>
+      </div>
+      <div class="summary-box">
+        <span>Result Status</span>
+        <strong><%= semesterResult ? semesterResult.resultStatus : 'Pending' %></strong>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Internal</th>
+          <th>External</th>
+          <th>Total</th>
+          <th>Grade</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% marks.forEach((mark) => { %>
+          <tr>
+            <td><%= mark.subjectName %></td>
+            <td><%= mark.internalMarks %></td>
+            <td><%= mark.externalMarks %></td>
+            <td><%= mark.totalMarks %></td>
+            <td><%= mark.grade %></td>
+            <td><%= mark.resultStatus %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</body>
+</html>

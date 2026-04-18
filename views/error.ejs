@@ -1,0 +1,18 @@
+<%- include('partials/head', { pageTitle }) %>
+<body class="auth-body">
+  <section class="auth-shell">
+    <div class="auth-card error-card">
+      <div class="auth-copy">
+        <span class="eyebrow">Something happened</span>
+        <h1><%= message %></h1>
+        <p><%= details %></p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="<%= currentUser ? '/dashboard' : '/login' %>">
+            <%= currentUser ? 'Back to Dashboard' : 'Back to Login' %>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

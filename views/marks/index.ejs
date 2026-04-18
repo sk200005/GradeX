@@ -1,0 +1,70 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="page-toolbar">
+  <form class="search-form" method="GET" action="/marks">
+    <input
+      type="text"
+      name="search"
+      placeholder="Search by roll number, student name, subject"
+      value="<%= search %>"
+    />
+    <button type="submit" class="btn btn-secondary">Search</button>
+  </form>
+
+  <a class="btn btn-primary" href="/marks/new">Add Marks</a>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>Marks Records</h3>
+      <p>Grades and pass/fail are calculated automatically.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" data-live-filter>
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Internal</th>
+          <th>External</th>
+          <th>Total</th>
+          <th>Grade</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!marks.length) { %>
+          <tr><td colspan="9" class="empty-state">No marks records found.</td></tr>
+        <% } %>
+        <% marks.forEach((mark) => { %>
+          <tr>
+            <td><%= mark.rollNumber %></td>
+            <td><%= mark.studentName %></td>
+            <td><%= mark.subjectName %></td>
+            <td><%= mark.internalMarks %></td>
+            <td><%= mark.externalMarks %></td>
+            <td><%= mark.totalMarks %></td>
+            <td><%= mark.grade %></td>
+            <td><span class="badge <%= mark.resultStatus === 'Pass' ? 'badge-success' : 'badge-danger' %>"><%= mark.resultStatus %></span></td>
+            <td class="actions">
+              <a class="btn btn-small btn-secondary" href="/marks/<%= mark._id %>/edit">Edit</a>
+              <form action="/marks/<%= mark._id %>?_method=DELETE" method="POST">
+                <button type="submit" class="btn btn-small btn-danger" data-confirm="Delete this marks record?">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../partials/shell-end') %>

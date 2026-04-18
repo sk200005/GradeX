@@ -1,0 +1,22 @@
+<header class="topbar">
+  <button class="icon-button sidebar-toggle" type="button" data-sidebar-toggle>
+    Menu
+  </button>
+
+  <div class="topbar-title">
+    <h2><%= pageTitle %></h2>
+    <p>Student Result Analysis System</p>
+  </div>
+
+  <div class="topbar-actions">
+    <button class="icon-button" type="button" data-theme-toggle>
+      Dark Mode
+    </button>
+    <% if (currentUser) { %>
+      <div class="user-chip">
+        <span><%= currentUser.fullName %></span>
+        <a href="/logout">Logout</a>
+      </div>
+    <% } %>
+  </div>
+</header>
