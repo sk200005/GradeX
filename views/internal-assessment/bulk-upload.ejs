@@ -1,0 +1,148 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="page-toolbar">
+  <div>
+    <h2 style="margin:0;font-family:'Space Grotesk',sans-serif;letter-spacing:-.03em">Bulk Upload Internal Assessments</h2>
+    <p style="margin:4px 0 0;color:var(--text-soft)">Upload a CSV file to create multiple internal assessment records at once.</p>
+  </div>
+  <a href="/internal-assessment" class="btn btn-secondary">← Back</a>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>CSV Format Guide</h3>
+    </div>
+  </div>
+  <div style="background:var(--bg-muted);border-radius:var(--radius-md);padding:18px;margin-bottom:20px;font-size:.93rem;line-height:1.7">
+    <p style="margin:0 0 10px"><strong>Required columns (always):</strong></p>
+    <code style="display:block;background:var(--bg-soft);padding:10px 14px;border-radius:10px;margin-bottom:14px">rollNumber, subjectCode, semester</code>
+    <p style="margin:0 0 10px"><strong>Component columns:</strong> add one column per component, named <em>exactly</em> as defined in the matching Assessment Template.</p>
+    <p style="margin:0 0 4px"><strong>Example</strong> (template has Assignment + Quiz):</p>
+    <code style="display:block;background:var(--bg-soft);padding:10px 14px;border-radius:10px">rollNumber,subjectCode,semester,Assignment,Quiz<br>
+S001,CS301,3,22,18<br>
+S002,CS301,3,20,16</code>
+    <p style="margin:14px 0 0;color:var(--text-soft);font-size:.88rem">
+      The system looks up the correct template by matching the subject code automatically.
+      Existing records for the same student/subject/semester will be updated (not duplicated).
+    </p>
+  </div>
+
+  <div class="upload-zone" id="iaDropZone">
+    <span class="upload-zone-icon">📂</span>
+    <p><strong>Click to browse</strong> or drag &amp; drop your file here</p>
+    <p>Accepted formats: .csv, .xlsx &nbsp;·&nbsp; Max 5 MB</p>
+    <input type="file" id="iaFileInput" accept=".csv,.xlsx" />
+  </div>
+
+  <div class="file-chip" id="iaFileChip">
+    <span id="iaFileName"></span>
+    <button type="button" id="iaClearFile" aria-label="Remove file">✕</button>
+  </div>
+
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px">
+    <button class="btn btn-primary" id="iaUploadBtn" disabled>Upload &amp; Process</button>
+    <div class="upload-spinner" id="iaSpinner">
+      <div class="spinner-ring"></div>
+      <span>Processing…</span>
+    </div>
+  </div>
+
+  <div class="upload-result" id="iaResult">
+    <div class="upload-summary" id="iaSummary"></div>
+    <button class="upload-errors-toggle" id="iaErrorsToggle">▶ Show failed rows</button>
+    <div class="upload-errors-table-wrap" id="iaErrorsWrap">
+      <table class="upload-errors-table">
+        <thead><tr><th>#</th><th>Identifier</th><th>Reason</th></tr></thead>
+        <tbody id="iaErrorsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  const dropZone  = document.getElementById('iaDropZone');
+  const fileInput = document.getElementById('iaFileInput');
+  const fileChip  = document.getElementById('iaFileChip');
+  const fileName  = document.getElementById('iaFileName');
+  const clearFile = document.getElementById('iaClearFile');
+  const uploadBtn = document.getElementById('iaUploadBtn');
+  const spinner   = document.getElementById('iaSpinner');
+  const result    = document.getElementById('iaResult');
+  const summary   = document.getElementById('iaSummary');
+  const errToggle = document.getElementById('iaErrorsToggle');
+  const errWrap   = document.getElementById('iaErrorsWrap');
+  const errBody   = document.getElementById('iaErrorsBody');
+  let errVisible  = false;
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+  clearFile.addEventListener('click', () => { fileInput.value = ''; fileChip.classList.remove('visible'); uploadBtn.disabled = true; });
+
+  function setFile(f) {
+    fileName.textContent = f.name;
+    fileChip.classList.add('visible');
+    uploadBtn.disabled = false;
+    result.classList.remove('visible');
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!fileInput.files[0]) return;
+    spinner.classList.add('visible');
+    uploadBtn.disabled = true;
+    result.classList.remove('visible');
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+
+    try {
+      const res  = await fetch('/internal-assessment/bulk-upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      renderResult(data);
+    } catch (e) {
+      renderResult({ success: false, message: 'Network error. Please try again.' });
+    } finally {
+      spinner.classList.remove('visible');
+    }
+  });
+
+  errToggle.addEventListener('click', () => {
+    errVisible = !errVisible;
+    errToggle.textContent = (errVisible ? '▼ Hide' : '▶ Show') + ' failed rows';
+    errWrap.classList.toggle('visible', errVisible);
+  });
+
+  function renderResult(data) {
+    result.classList.add('visible');
+    if (!data.success) {
+      summary.innerHTML = `<div class="upload-stat upload-stat-error">⚠ ${data.message}</div>`;
+      errToggle.classList.remove('visible');
+      return;
+    }
+    summary.innerHTML =
+      `<div class="upload-stat upload-stat-success">✓ ${data.successCount} records processed</div>` +
+      (data.errorCount ? `<div class="upload-stat upload-stat-error">✕ ${data.errorCount} failed</div>` : '');
+
+    if (data.errors && data.errors.length) {
+      errBody.innerHTML = data.errors.map((e) =>
+        `<tr><td>${e.row}</td><td>${e.identifier || '—'}</td><td class="upload-error-msg">${e.message}</td></tr>`
+      ).join('');
+      errToggle.classList.add('visible');
+      errVisible = false;
+      errWrap.classList.remove('visible');
+      errToggle.textContent = '▶ Show failed rows';
+    } else {
+      errToggle.classList.remove('visible');
+    }
+  }
+})();
+</script>
+
+<%- include('../partials/shell-end') %>

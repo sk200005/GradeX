@@ -1,0 +1,155 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3><%= template._id ? 'Edit Assessment Template' : 'New Assessment Template' %></h3>
+      <p>Define the components (e.g. assignments, quizzes) and their weightages. Weightages must sum to <strong>100%</strong>.</p>
+    </div>
+    <div class="metric-preview">
+      <span id="weightageDisplay">Remaining: <strong id="remainingPct">100</strong>%</span>
+    </div>
+  </div>
+
+  <form action="<%= formAction %>" method="<%= formMethod %>" class="form-grid" id="templateForm">
+
+    <label>
+      Template Name
+      <input type="text" name="name" placeholder="e.g. SE Computer Sem 3 Internal" value="<%= template.name || '' %>" required />
+    </label>
+
+    <label>
+      Course
+      <input type="text" name="course" placeholder="e.g. BE Computer" value="<%= template.course || '' %>" required />
+    </label>
+
+    <label>
+      Subject
+      <select name="subject" required>
+        <option value="">Select subject</option>
+        <% subjects.forEach((s) => { %>
+          <option value="<%= s._id %>" <%= String(template.subject || '') === String(s._id) ? 'selected' : '' %>>
+            <%= s.subjectCode %> — <%= s.subjectName %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label>
+      Internal Marks Scale (Out Of)
+      <input type="number" name="outOf" min="1" max="100" placeholder="e.g. 30"
+             value="<%= template.outOf || '' %>" required />
+    </label>
+
+    <!-- Component rows -->
+    <div class="form-span" id="componentsSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <strong>Components</strong>
+        <button type="button" class="btn btn-secondary btn-small" id="addComponentBtn">+ Add Component</button>
+      </div>
+
+      <div id="componentRows" class="component-rows-grid">
+        <!-- Header -->
+        <div class="component-row-header">
+          <span>Component Name</span>
+          <span>Max Marks</span>
+          <span>Weightage (%)</span>
+          <span></span>
+        </div>
+
+        <% if (template.components && template.components.length) { %>
+          <% template.components.forEach((c, i) => { %>
+            <div class="component-row" data-row>
+              <input type="text" name="componentNames" value="<%= c.name %>" placeholder="e.g. Assignment" required />
+              <input type="number" name="componentMaxMarks" value="<%= c.maxMarks %>" min="1" placeholder="25" required />
+              <input type="number" name="componentWeightages" value="<%= c.weightage %>" min="0" max="100" step="0.01"
+                     class="weightage-input" placeholder="40" required />
+              <button type="button" class="btn btn-small btn-danger remove-row-btn">✕</button>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <!-- Default first row -->
+          <div class="component-row" data-row>
+            <input type="text" name="componentNames" placeholder="e.g. Assignment" required />
+            <input type="number" name="componentMaxMarks" min="1" placeholder="25" required />
+            <input type="number" name="componentWeightages" min="0" max="100" step="0.01"
+                   class="weightage-input" placeholder="40" required />
+            <button type="button" class="btn btn-small btn-danger remove-row-btn">✕</button>
+          </div>
+        <% } %>
+      </div>
+
+      <div id="weightageBar" style="margin-top:12px">
+        <div style="height:8px;border-radius:99px;background:var(--bg-muted);overflow:hidden">
+          <div id="weightageBarFill" style="height:100%;border-radius:99px;width:0%;background:var(--primary);transition:width .3s,background .3s"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions form-span">
+      <a href="/assessment-templates" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Template</button>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  const rowsContainer = document.getElementById('componentRows');
+  const addBtn = document.getElementById('addComponentBtn');
+  const remainingPct = document.getElementById('remainingPct');
+  const barFill = document.getElementById('weightageBarFill');
+  const displaySpan = document.getElementById('weightageDisplay');
+
+  function updateWeightage() {
+    const inputs = rowsContainer.querySelectorAll('.weightage-input');
+    let total = 0;
+    inputs.forEach((inp) => { total += parseFloat(inp.value || 0); });
+    const remaining = Math.round((100 - total) * 100) / 100;
+    remainingPct.textContent = remaining;
+    barFill.style.width = Math.min(total, 100) + '%';
+    const over = total > 100.01;
+    barFill.style.background = over ? 'var(--danger)' : total >= 99.9 ? 'var(--success)' : 'var(--primary)';
+    remainingPct.style.color = over ? 'var(--danger)' : '';
+    displaySpan.style.color = over ? 'var(--danger)' : '';
+  }
+
+  function makeRow() {
+    const div = document.createElement('div');
+    div.className = 'component-row';
+    div.setAttribute('data-row', '');
+    div.innerHTML = `
+      <input type="text" name="componentNames" placeholder="e.g. Quiz" required />
+      <input type="number" name="componentMaxMarks" min="1" placeholder="20" required />
+      <input type="number" name="componentWeightages" min="0" max="100" step="0.01"
+             class="weightage-input" placeholder="30" required />
+      <button type="button" class="btn btn-small btn-danger remove-row-btn">✕</button>
+    `;
+    return div;
+  }
+
+  addBtn.addEventListener('click', () => {
+    rowsContainer.appendChild(makeRow());
+    updateWeightage();
+  });
+
+  rowsContainer.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-row-btn')) {
+      const rows = rowsContainer.querySelectorAll('[data-row]');
+      if (rows.length > 1) {
+        e.target.closest('[data-row]').remove();
+        updateWeightage();
+      }
+    }
+  });
+
+  rowsContainer.addEventListener('input', (e) => {
+    if (e.target.classList.contains('weightage-input')) updateWeightage();
+  });
+
+  updateWeightage();
+})();
+</script>
+
+<%- include('../partials/shell-end') %>

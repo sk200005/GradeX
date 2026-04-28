@@ -80,4 +80,57 @@
   window.dashboardData = <%- JSON.stringify(charts) %>;
 </script>
 
+<!-- ── At-Risk Students Widget ────────────────────────────────────────────── -->
+<section class="panel" id="atRiskWidget" style="display:none">
+  <div class="panel-heading">
+    <div>
+      <h3>⚠ At-Risk Students</h3>
+      <p>Students flagged for low attendance or marks based on current thresholds.</p>
+    </div>
+    <a href="/at-risk" class="btn btn-small btn-secondary">View All →</a>
+  </div>
+
+  <div id="atRiskBadges" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap"></div>
+
+  <div id="atRiskList"></div>
+</section>
+
+<script>
+(function () {
+  fetch('/at-risk/data')
+    .then((r) => r.json())
+    .then((data) => {
+      const widget = document.getElementById('atRiskWidget');
+      const badges = document.getElementById('atRiskBadges');
+      const list   = document.getElementById('atRiskList');
+
+      if (!data.critical && !data.warning) return; // nothing to show
+      widget.style.display = '';
+
+      badges.innerHTML =
+        (data.critical ? `<span class="atrisk-badge atrisk-critical">🔴 ${data.critical} Critical</span>` : '') +
+        (data.warning  ? `<span class="atrisk-badge atrisk-warning">🟡 ${data.warning} Warning</span>`  : '');
+
+      if (!data.students || !data.students.length) {
+        list.innerHTML = '<p style="color:var(--text-soft)">No at-risk students found.</p>';
+        return;
+      }
+
+      list.innerHTML = data.students.map((s) => `
+        <div class="atrisk-row ${s.riskLevel === 'critical' ? 'atrisk-row-critical' : 'atrisk-row-warning'}">
+          <div class="atrisk-student-info">
+            <strong>${s.fullName}</strong>
+            <span style="color:var(--text-soft);font-size:.87rem">${s.rollNumber} · ${s.department}</span>
+          </div>
+          <div class="atrisk-pills">
+            ${s.issues.slice(0, 2).map((issue) => `<span class="atrisk-pill">${issue}</span>`).join('')}
+            ${s.issues.length > 2 ? `<span class="atrisk-pill atrisk-pill-more">+${s.issues.length - 2} more</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    })
+    .catch(() => {}); // non-critical — fail silently
+})();
+</script>
+
 <%- include('partials/shell-end') %>

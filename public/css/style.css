@@ -762,3 +762,427 @@ canvas {
     border-radius: 0;
   }
 }
+
+/* ─── Bulk Upload Modal ──────────────────────────────────────────────────────── */
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.modal-close {
+  background: var(--bg-muted);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+  color: var(--text-soft);
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--bg-muted);
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--primary);
+  background: rgba(11, 118, 209, 0.06);
+}
+
+.upload-zone-icon {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.upload-zone p {
+  margin: 4px 0;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.upload-zone strong {
+  color: var(--primary);
+}
+
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.file-chip {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.file-chip.visible {
+  display: flex;
+}
+
+.file-chip span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-chip button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-soft);
+  font-size: 1rem;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.upload-template-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: var(--primary);
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.upload-template-link:hover {
+  text-decoration: underline;
+}
+
+.upload-result {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.upload-result.visible {
+  display: flex;
+}
+
+.upload-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.upload-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.upload-stat-success {
+  background: rgba(13, 159, 110, 0.12);
+  color: var(--success);
+}
+
+.upload-stat-error {
+  background: rgba(217, 72, 95, 0.12);
+  color: var(--danger);
+}
+
+.upload-errors-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0;
+  text-align: left;
+  display: none;
+}
+
+.upload-errors-toggle.visible {
+  display: inline-block;
+}
+
+.upload-errors-table-wrap {
+  display: none;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.upload-errors-table-wrap.visible {
+  display: block;
+}
+
+.upload-errors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 380px;
+}
+
+.upload-errors-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.upload-errors-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.upload-errors-table tr:last-child td {
+  border-bottom: none;
+}
+
+.upload-error-msg {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.upload-spinner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.upload-spinner.visible {
+  display: flex;
+}
+
+.spinner-ring {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Internal Assessment & Templates ───────────────────────────────────────── */
+
+.badge-warning {
+  background: rgba(240, 162, 2, 0.14);
+  color: var(--warning);
+}
+
+.badge-info {
+  background: rgba(11, 118, 209, 0.12);
+  color: var(--primary);
+}
+
+/* Grid for component input rows (name | maxMarks | weightage | remove) */
+.component-rows-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.component-row-header {
+  display: grid;
+  grid-template-columns: 1fr 120px 130px 44px;
+  gap: 10px;
+  padding: 0 4px 8px;
+  font-size: .85rem;
+  color: var(--text-soft);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 3-col variant used in mark-entry form (component label | max | input) */
+.component-row-header:has(span:nth-child(3):last-child) {
+  grid-template-columns: 1fr 120px 1fr;
+}
+
+.component-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 130px 44px;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 3-col variant for mark-entry (no remove button) */
+.component-row:has(input[type="hidden"]) {
+  grid-template-columns: 1fr 120px 1fr;
+}
+
+.component-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(11, 118, 209, 0.1);
+  color: var(--primary);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+/* ─── At-Risk Feature ────────────────────────────────────────────────────────── */
+
+/* Sidebar badge */
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 800;
+  margin-left: 6px;
+  line-height: 1;
+}
+
+/* Dashboard widget — stat badges */
+.atrisk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .93rem;
+}
+
+.atrisk-critical {
+  background: rgba(217, 72, 95, 0.13);
+  color: var(--danger);
+}
+
+.atrisk-warning {
+  background: rgba(240, 162, 2, 0.15);
+  color: var(--warning);
+}
+
+/* Dashboard widget — student rows */
+.atrisk-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  border-left: 4px solid transparent;
+  background: var(--bg-muted);
+  flex-wrap: wrap;
+}
+
+.atrisk-row-critical {
+  border-left-color: var(--danger);
+  background: rgba(217, 72, 95, 0.05);
+}
+
+.atrisk-row-warning {
+  border-left-color: var(--warning);
+  background: rgba(240, 162, 2, 0.05);
+}
+
+.atrisk-student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  flex: 1;
+}
+
+.atrisk-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 2;
+  align-items: center;
+}
+
+/* Issue pill tags */
+.atrisk-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(11, 118, 209, 0.1);
+  color: var(--text);
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.atrisk-pill-more {
+  background: var(--bg-muted);
+  color: var(--text-soft);
+}
+
+/* Full table — critical row left-border accent */
+.row-critical td:first-child {
+  border-left: 4px solid var(--danger);
+  padding-left: 8px;
+}
+
+/* Collapsible settings panel */
+details.panel > summary {
+  user-select: none;
+}
+
+details.panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.panel[open] > summary {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}

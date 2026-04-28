@@ -1,0 +1,163 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<!-- ── Summary stats ─────────────────────────────────────────────────────── -->
+<section class="hero-panel">
+  <div>
+    <span class="eyebrow">Analytics</span>
+    <h3>At-Risk Students</h3>
+    <p>Students flagged based on attendance and marks thresholds. This is a read-only view — no data is modified.</p>
+  </div>
+  <div class="hero-actions">
+    <a href="/at-risk/export?department=<%= filterDepartment %>&course=<%= filterCourse %>&riskLevel=<%= filterRiskLevel %>"
+       class="btn btn-secondary">⬇ Export CSV</a>
+  </div>
+</section>
+
+<section class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+  <article class="stat-card" style="border-top:4px solid var(--danger)">
+    <p>Critical</p>
+    <h3 style="color:var(--danger)"><%= critical %></h3>
+  </article>
+  <article class="stat-card" style="border-top:4px solid var(--warning)">
+    <p>Warning</p>
+    <h3 style="color:var(--warning)"><%= warning %></h3>
+  </article>
+  <article class="stat-card">
+    <p>Total Flagged</p>
+    <h3><%= critical + warning %></h3>
+  </article>
+</section>
+
+<!-- ── Collapsible Settings Panel ────────────────────────────────────────── -->
+<details class="panel" id="settingsPanel" style="padding:0;overflow:hidden">
+  <summary style="padding:18px 22px;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-family:'Space Grotesk',sans-serif">
+    <span>⚙ Alert Thresholds</span>
+    <span style="font-size:.85rem;color:var(--text-soft);font-weight:400">Click to expand / collapse</span>
+  </summary>
+  <div style="padding:0 22px 22px">
+    <form action="/at-risk/settings" method="POST" class="form-grid">
+      <label>
+        Attendance Threshold (%)
+        <input type="number" name="attendanceThreshold" min="0" max="100"
+               value="<%= settings.attendanceThreshold %>" required />
+        <span style="font-size:.83rem;color:var(--text-soft)">Students below this % are flagged.</span>
+      </label>
+      <label>
+        Internal Marks Threshold
+        <input type="number" name="internalMarksThreshold" min="0" max="100"
+               value="<%= settings.internalMarksThreshold %>" required />
+        <span style="font-size:.83rem;color:var(--text-soft)">Flag if internal marks are below this value.</span>
+      </label>
+      <label>
+        External Marks Threshold
+        <input type="number" name="externalMarksThreshold" min="0" max="100"
+               value="<%= settings.externalMarksThreshold %>" required />
+        <span style="font-size:.83rem;color:var(--text-soft)">Flag if external marks are below this value.</span>
+      </label>
+      <div class="form-actions form-span">
+        <button type="submit" class="btn btn-primary">Save Thresholds</button>
+      </div>
+    </form>
+  </div>
+</details>
+
+<!-- ── Filter bar ─────────────────────────────────────────────────────────── -->
+<section class="page-toolbar" style="flex-wrap:wrap;gap:10px">
+  <form method="GET" action="/at-risk" style="display:flex;gap:10px;flex-wrap:wrap;flex:1;align-items:center">
+    <label style="flex-direction:row;align-items:center;gap:8px;font-weight:normal;flex:1;min-width:180px">
+      <span style="font-weight:600;white-space:nowrap">Department</span>
+      <select name="department" style="flex:1" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        <% departments.forEach((d) => { %>
+          <option value="<%= d %>" <%= filterDepartment === d ? 'selected' : '' %>><%= d %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label style="flex-direction:row;align-items:center;gap:8px;font-weight:normal;flex:1;min-width:150px">
+      <span style="font-weight:600;white-space:nowrap">Course</span>
+      <select name="course" style="flex:1" onchange="this.form.submit()">
+        <option value="">All Courses</option>
+        <% courses.forEach((c) => { %>
+          <option value="<%= c %>" <%= filterCourse === c ? 'selected' : '' %>><%= c %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label style="flex-direction:row;align-items:center;gap:8px;font-weight:normal">
+      <span style="font-weight:600;white-space:nowrap">Risk Level</span>
+      <select name="riskLevel" onchange="this.form.submit()">
+        <option value="">All</option>
+        <option value="critical" <%= filterRiskLevel === 'critical' ? 'selected' : '' %>>Critical</option>
+        <option value="warning"  <%= filterRiskLevel === 'warning'  ? 'selected' : '' %>>Warning</option>
+      </select>
+    </label>
+    <% if (filterDepartment || filterCourse || filterRiskLevel) { %>
+      <a href="/at-risk" class="btn btn-small btn-secondary">✕ Clear filters</a>
+    <% } %>
+  </form>
+</section>
+
+<!-- ── Main table ─────────────────────────────────────────────────────────── -->
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>Flagged Students</h3>
+      <p>Showing <%= profiles.length %> student<%= profiles.length !== 1 ? 's' : '' %>.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Roll No</th>
+          <th>Department</th>
+          <th>Attendance %</th>
+          <th>Issues</th>
+          <th>Risk Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!profiles.length) { %>
+          <tr><td colspan="6" class="empty-state">No at-risk students match the current filters.</td></tr>
+        <% } %>
+        <% profiles.forEach((p) => { %>
+          <tr class="<%= p.riskLevel === 'critical' ? 'row-critical' : '' %>">
+            <td>
+              <strong><%= p.fullName %></strong>
+              <br><span style="font-size:.83rem;color:var(--text-soft)"><%= p.course %></span>
+            </td>
+            <td><%= p.rollNumber %></td>
+            <td><%= p.department %></td>
+            <td>
+              <% if (p.worstAttendance !== null) { %>
+                <span style="color:<%= p.worstAttendance < 60 ? 'var(--danger)' : 'var(--warning)' %>;font-weight:700">
+                  <%= p.worstAttendance %>%
+                </span>
+              <% } else { %>
+                <span style="color:var(--text-soft)">—</span>
+              <% } %>
+            </td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:5px">
+                <% p.issues.forEach((issue) => { %>
+                  <span class="atrisk-pill"><%= issue %></span>
+                <% }) %>
+              </div>
+            </td>
+            <td>
+              <% if (p.riskLevel === 'critical') { %>
+                <span class="badge badge-danger" style="font-weight:800">🔴 Critical</span>
+              <% } else { %>
+                <span class="badge badge-warning">🟡 Warning</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../partials/shell-end') %>

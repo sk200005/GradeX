@@ -1,0 +1,3 @@
+rollNumber,fullName,gender,email,phone,department,course,city,state,semester
+STU001,Alice Johnson,Female,alice@example.com,9876543210,Computer Science,B.Tech,Mumbai,Maharashtra,3
+STU002,Bob Smith,Male,bob@example.com,9123456780,Computer Science,B.Tech,Pune,Maharashtra,3

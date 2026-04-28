@@ -7,6 +7,10 @@ const SemesterResult = require("../models/SemesterResult");
 const { ensureAuthenticated } = require("../middleware/auth");
 const { getStudentAndSubjectReferenceData } = require("../utils/referenceData");
 const { getErrorMessage } = require("../utils/errors");
+const upload = require("../middleware/upload");
+const { parseUploadedFile } = require("../utils/parseUpload");
+const { bulkInsert } = require("../utils/bulkUpload");
+const { calculateMarkSummary } = require("../utils/calculations");
 
 const router = express.Router();
 
@@ -208,5 +212,104 @@ router.get("/marksheet/:studentId", ensureAuthenticated, async (req, res, next) 
     return next(error);
   }
 });
+
+// ─── Bulk Upload ─────────────────────────────────────────────────────────────
+
+router.post(
+  "/upload",
+  ensureAuthenticated,
+  upload.single("file"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded." });
+    }
+
+    let rows;
+    try {
+      rows = await parseUploadedFile(req.file.buffer, req.file.originalname);
+    } catch (parseErr) {
+      return res.status(400).json({ success: false, message: parseErr.message });
+    }
+
+    if (!rows.length) {
+      return res.json({ success: true, successCount: 0, errorCount: 0, errors: [] });
+    }
+
+    // Pre-load all students and subjects for lookup
+    const [allStudents, allSubjects] = await Promise.all([
+      Student.find().lean(),
+      Subject.find().lean()
+    ]);
+
+    const studentMap = new Map(allStudents.map((s) => [s.rollNumber.toLowerCase(), s]));
+    const subjectMap = new Map(allSubjects.map((s) => [s.subjectCode.toLowerCase(), s]));
+
+    const docs = [];
+    const rowErrors = [];
+
+    rows.forEach((row, idx) => {
+      const rowNum = idx + 1;
+      const required = ["rollNumber", "subjectCode", "internalMarks", "externalMarks"];
+      const missing = required.filter((f) => !row[f] && row[f] !== 0);
+
+      if (missing.length) {
+        rowErrors.push({ row: rowNum, identifier: row.rollNumber || `Row ${rowNum}`, message: `Missing required columns: ${missing.join(", ")}` });
+        return;
+      }
+
+      const student = studentMap.get(row.rollNumber.toLowerCase());
+      if (!student) {
+        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `Student with roll number "${row.rollNumber}" not found.` });
+        return;
+      }
+
+      const subject = subjectMap.get(row.subjectCode.toLowerCase());
+      if (!subject) {
+        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `Subject with code "${row.subjectCode}" not found.` });
+        return;
+      }
+
+      const internalMarks = Number(row.internalMarks);
+      const externalMarks = Number(row.externalMarks);
+
+      if (isNaN(internalMarks) || internalMarks < 0 || internalMarks > 100) {
+        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: "internalMarks must be between 0 and 100." });
+        return;
+      }
+      if (isNaN(externalMarks) || externalMarks < 0 || externalMarks > 100) {
+        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: "externalMarks must be between 0 and 100." });
+        return;
+      }
+
+      // Compute derived fields inline (insertMany bypasses pre-validate hooks)
+      const { totalMarks, grade, resultStatus } = calculateMarkSummary(internalMarks, externalMarks);
+
+      docs.push({
+        student: student._id,
+        rollNumber: student.rollNumber,
+        studentName: student.fullName,
+        subject: subject._id,
+        subjectName: subject.subjectName,
+        internalMarks,
+        externalMarks,
+        totalMarks,
+        grade,
+        resultStatus,
+        semester: student.semester,
+        department: student.department
+      });
+    });
+
+    const { successCount, errors: dbErrors } = await bulkInsert(Mark, docs);
+    const allErrors = [...rowErrors, ...dbErrors];
+
+    return res.json({
+      success: true,
+      successCount,
+      errorCount: allErrors.length,
+      errors: allErrors
+    });
+  }
+);
 
 module.exports = router;

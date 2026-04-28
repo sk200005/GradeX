@@ -1,0 +1,9 @@
+rollNumber,fullName,gender,email,phone,department,course,city,state,semester
+CS201,Rahul Verma,Male,rahul.verma@example.com,9876501001,Computer Science,B.Sc Computer Science,Chennai,Tamil Nadu,3
+CS202,Ananya Krishnan,Female,ananya.k@example.com,9876501002,Computer Science,B.Sc Computer Science,Coimbatore,Tamil Nadu,3
+CS203,Nikhil Sharma,Male,nikhil.s@example.com,9876501003,Computer Science,B.Sc Computer Science,Mumbai,Maharashtra,3
+IT301,Pooja Nair,Female,pooja.nair@example.com,9876501004,Information Technology,BCA,Pune,Maharashtra,4
+IT302,Arjun Menon,Male,arjun.menon@example.com,9876501005,Information Technology,BCA,Bengaluru,Karnataka,4
+IT303,Divya Pillai,Female,divya.pillai@example.com,9876501006,Information Technology,BCA,Mysuru,Karnataka,4
+EC401,Sarthak Joshi,Male,sarthak.j@example.com,9876501007,Electronics,B.Tech ECE,Bengaluru,Karnataka,5
+EC402,Kavya Reddy,Female,kavya.reddy@example.com,9876501008,Electronics,B.Tech ECE,Chennai,Tamil Nadu,5

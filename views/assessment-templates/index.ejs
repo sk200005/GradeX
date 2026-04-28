@@ -1,0 +1,70 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="page-toolbar">
+  <div>
+    <h2 style="margin:0;font-family:'Space Grotesk',sans-serif;letter-spacing:-.03em">Assessment Templates</h2>
+    <p style="margin:4px 0 0;color:var(--text-soft)">Define weighted component breakdowns for internal marks calculation.</p>
+  </div>
+  <a class="btn btn-primary" href="/assessment-templates/new">+ New Template</a>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>All Templates</h3>
+      <p>Each template specifies how internal marks are computed for a subject.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Template Name</th>
+          <th>Subject</th>
+          <th>Course</th>
+          <th>Components</th>
+          <th>Out Of</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!templates.length) { %>
+          <tr><td colspan="6" class="empty-state">No assessment templates found. Create one to get started.</td></tr>
+        <% } %>
+        <% templates.forEach((t) => { %>
+          <tr>
+            <td><strong><%= t.name %></strong></td>
+            <td>
+              <% if (t.subject) { %>
+                <span style="font-size:.9rem"><%= t.subject.subjectCode %></span><br>
+                <span style="color:var(--text-soft);font-size:.85rem"><%= t.subject.subjectName %></span>
+              <% } else { %>
+                <span class="badge badge-warning">—</span>
+              <% } %>
+            </td>
+            <td><%= t.course %></td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <% t.components.forEach((c) => { %>
+                  <span class="component-chip"><%= c.name %> (<%= c.weightage %>%)</span>
+                <% }) %>
+              </div>
+            </td>
+            <td><span class="badge badge-info"><%= t.outOf %> marks</span></td>
+            <td class="actions">
+              <a class="btn btn-small btn-secondary" href="/assessment-templates/<%= t._id %>/edit">Edit</a>
+              <form action="/assessment-templates/<%= t._id %>?_method=DELETE" method="POST"
+                    onsubmit="return confirm('Delete this template? This cannot be undone.')">
+                <button type="submit" class="btn btn-small btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../partials/shell-end') %>

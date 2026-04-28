@@ -15,6 +15,11 @@
     <a class="<%= currentPath.startsWith('/attendance') ? 'active' : '' %>" href="/attendance">Attendance</a>
     <a class="<%= currentPath.startsWith('/results') ? 'active' : '' %>" href="/results">Semester Results</a>
     <a class="<%= currentPath.startsWith('/reports') ? 'active' : '' %>" href="/reports">Reports</a>
+    <a class="<%= currentPath.startsWith('/assessment-templates') ? 'active' : '' %>" href="/assessment-templates">Assessment Templates</a>
+    <a class="<%= currentPath.startsWith('/internal-assessment') ? 'active' : '' %>" href="/internal-assessment">Internal Assessment</a>
+    <a class="<%= currentPath.startsWith('/at-risk') ? 'active' : '' %>" href="/at-risk" id="atRiskNavLink">
+      At-Risk Students <span class="nav-badge" id="atRiskBadge" style="display:none"></span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">

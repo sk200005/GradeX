@@ -1,0 +1,272 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<!-- Filter bar -->
+<section class="page-toolbar">
+  <form method="GET" action="/internal-assessment" style="display:flex;gap:12px;flex:1;flex-wrap:wrap">
+    <label style="flex:1;min-width:200px;flex-direction:row;align-items:center;gap:8px;font-weight:normal">
+      <span style="white-space:nowrap;font-weight:600">Subject</span>
+      <select name="subjectId" style="flex:1" onchange="this.form.submit()">
+        <option value="">All Subjects</option>
+        <% subjects.forEach((s) => { %>
+          <option value="<%= s._id %>" <%= filterSubjectId === String(s._id) ? 'selected' : '' %>>
+            <%= s.subjectCode %> — <%= s.subjectName %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+    <label style="flex:0 0 auto;flex-direction:row;align-items:center;gap:8px;font-weight:normal">
+      <span style="white-space:nowrap;font-weight:600">Semester</span>
+      <select name="semester" style="width:120px" onchange="this.form.submit()">
+        <option value="">All</option>
+        <% [1,2,3,4,5,6,7,8].forEach((sem) => { %>
+          <option value="<%= sem %>" <%= String(filterSemester) === String(sem) ? 'selected' : '' %>>Sem <%= sem %></option>
+        <% }) %>
+      </select>
+    </label>
+  </form>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button id="openBulkUpload" class="btn btn-secondary">⬆ Bulk CSV Upload</button>
+
+    <form action="/internal-assessment/push-all" method="POST" id="pushAllForm"
+          onsubmit="return confirm('Push ALL unpushed records for the current filter to Marks?')">
+      <input type="hidden" name="subjectId" value="<%= filterSubjectId %>">
+      <input type="hidden" name="semester" value="<%= filterSemester %>">
+      <button type="submit" class="btn btn-secondary">⬆ Push All</button>
+    </form>
+
+    <a class="btn btn-primary" href="/internal-assessment/new">+ New Assessment</a>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3>Internal Assessment Records</h3>
+      <p>Calculated internal marks from weighted components. Push to sync into Marks.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Sem</th>
+          <% if (assessments.length && assessments[0].template) { %>
+            <% assessments[0].template.components.forEach((c) => { %>
+              <th><%= c.name %></th>
+            <% }) %>
+          <% } %>
+          <th>Calculated Internal</th>
+          <th>Pushed</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!assessments.length) { %>
+          <tr><td colspan="10" class="empty-state">No internal assessment records found for the selected filter.</td></tr>
+        <% } %>
+        <% assessments.forEach((ia) => { %>
+          <tr>
+            <td><%= ia.student ? ia.student.rollNumber : '—' %></td>
+            <td><%= ia.student ? ia.student.fullName : '—' %></td>
+            <td>
+              <% if (ia.subject) { %>
+                <span style="font-size:.85rem;color:var(--text-soft)"><%= ia.subject.subjectCode %></span><br>
+                <%= ia.subject.subjectName %>
+              <% } else { %>—<% } %>
+            </td>
+            <td>Sem <%= ia.semester %></td>
+
+            <!-- Per-component marks -->
+            <% if (ia.template && ia.template.components) { %>
+              <% ia.template.components.forEach((comp) => { %>
+                <% const cm = ia.componentMarks.find((m) => m.componentName.toLowerCase() === comp.name.toLowerCase()); %>
+                <td>
+                  <% if (cm) { %>
+                    <%= cm.marksObtained %>/<%= comp.maxMarks %>
+                  <% } else { %>
+                    <span style="color:var(--text-soft)">—</span>
+                  <% } %>
+                </td>
+              <% }) %>
+            <% } %>
+
+            <td>
+              <strong style="font-size:1.05rem;color:var(--primary)"><%= ia.calculatedInternal %></strong>
+            </td>
+            <td>
+              <% if (ia.pushedToMarks) { %>
+                <span class="badge badge-success">✓ Pushed</span>
+              <% } else { %>
+                <span class="badge badge-warning">Pending</span>
+              <% } %>
+            </td>
+            <td class="actions">
+              <a class="btn btn-small btn-secondary" href="/internal-assessment/<%= ia._id %>/edit">Edit</a>
+              <% if (!ia.pushedToMarks) { %>
+                <form action="/internal-assessment/<%= ia._id %>/push" method="POST"
+                      onsubmit="return confirm('Push calculated internal marks to the Marks record for <%= ia.student ? ia.student.fullName : 'this student' %>?')">
+                  <button type="submit" class="btn btn-small btn-primary">Push</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── Bulk Upload Modal ─────────────────────────────────────────────────── -->
+<div class="modal" id="bulkUploadModal" role="dialog" aria-modal="true" aria-labelledby="bulkUploadTitle">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="bulkUploadTitle">Bulk Upload Internal Assessments</h3>
+      <button class="modal-close" id="closeBulkUpload" aria-label="Close">✕</button>
+    </div>
+
+    <div style="background:var(--bg-muted);border-radius:var(--radius-md);padding:14px;margin-bottom:18px;font-size:.9rem">
+      <strong>CSV Format:</strong> <code>rollNumber, subjectCode, semester, [one column per component matching template names exactly]</code>
+      <br>The system looks up the matching template by subject code automatically.
+    </div>
+
+    <a class="upload-template-link" href="/internal-assessment/bulk-upload">
+      📄 View full bulk upload guide
+    </a>
+
+    <div class="upload-zone" id="iaDropZone">
+      <span class="upload-zone-icon">📂</span>
+      <p><strong>Click to browse</strong> or drag &amp; drop your file here</p>
+      <p>Accepted formats: .csv, .xlsx &nbsp;·&nbsp; Max 5 MB</p>
+      <input type="file" id="iaFileInput" accept=".csv,.xlsx" />
+    </div>
+
+    <div class="file-chip" id="iaFileChip">
+      <span id="iaFileName"></span>
+      <button type="button" id="iaClearFile" aria-label="Remove file">✕</button>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-primary" id="iaUploadBtn" disabled>Upload</button>
+      <div class="upload-spinner" id="iaSpinner">
+        <div class="spinner-ring"></div>
+        <span>Uploading…</span>
+      </div>
+    </div>
+
+    <div class="upload-result" id="iaResult">
+      <div class="upload-summary" id="iaSummary"></div>
+      <button class="upload-errors-toggle" id="iaErrorsToggle">▶ Show failed rows</button>
+      <div class="upload-errors-table-wrap" id="iaErrorsWrap">
+        <table class="upload-errors-table">
+          <thead><tr><th>#</th><th>Identifier</th><th>Reason</th></tr></thead>
+          <tbody id="iaErrorsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const modal     = document.getElementById('bulkUploadModal');
+  const openBtn   = document.getElementById('openBulkUpload');
+  const closeBtn  = document.getElementById('closeBulkUpload');
+  const dropZone  = document.getElementById('iaDropZone');
+  const fileInput = document.getElementById('iaFileInput');
+  const fileChip  = document.getElementById('iaFileChip');
+  const fileName  = document.getElementById('iaFileName');
+  const clearFile = document.getElementById('iaClearFile');
+  const uploadBtn = document.getElementById('iaUploadBtn');
+  const spinner   = document.getElementById('iaSpinner');
+  const result    = document.getElementById('iaResult');
+  const summary   = document.getElementById('iaSummary');
+  const errToggle = document.getElementById('iaErrorsToggle');
+  const errWrap   = document.getElementById('iaErrorsWrap');
+  const errBody   = document.getElementById('iaErrorsBody');
+  let errVisible  = false;
+
+  openBtn.addEventListener('click', () => { resetModal(); modal.classList.add('active'); });
+  closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+  clearFile.addEventListener('click', () => { fileInput.value = ''; fileChip.classList.remove('visible'); uploadBtn.disabled = true; });
+
+  function setFile(f) {
+    fileName.textContent = f.name;
+    fileChip.classList.add('visible');
+    uploadBtn.disabled = false;
+    result.classList.remove('visible');
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!fileInput.files[0]) return;
+    spinner.classList.add('visible');
+    uploadBtn.disabled = true;
+    result.classList.remove('visible');
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+
+    try {
+      const res  = await fetch('/internal-assessment/bulk-upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      renderResult(data);
+    } catch (e) {
+      renderResult({ success: false, message: 'Network error. Please try again.' });
+    } finally {
+      spinner.classList.remove('visible');
+    }
+  });
+
+  errToggle.addEventListener('click', () => {
+    errVisible = !errVisible;
+    errToggle.textContent = (errVisible ? '▼ Hide' : '▶ Show') + ' failed rows';
+    errWrap.classList.toggle('visible', errVisible);
+  });
+
+  function renderResult(data) {
+    result.classList.add('visible');
+    if (!data.success) {
+      summary.innerHTML = `<div class="upload-stat upload-stat-error">⚠ ${data.message}</div>`;
+      errToggle.classList.remove('visible'); errWrap.classList.remove('visible');
+      return;
+    }
+    summary.innerHTML =
+      `<div class="upload-stat upload-stat-success">✓ ${data.successCount} processed successfully</div>` +
+      (data.errorCount ? `<div class="upload-stat upload-stat-error">✕ ${data.errorCount} failed</div>` : '');
+
+    if (data.errors && data.errors.length) {
+      errBody.innerHTML = data.errors.map((e) =>
+        `<tr><td>${e.row}</td><td>${e.identifier || '—'}</td><td class="upload-error-msg">${e.message}</td></tr>`
+      ).join('');
+      errToggle.classList.add('visible');
+      errVisible = false; errWrap.classList.remove('visible');
+      errToggle.textContent = '▶ Show failed rows';
+    } else {
+      errToggle.classList.remove('visible'); errWrap.classList.remove('visible');
+    }
+  }
+
+  function resetModal() {
+    fileInput.value = ''; fileChip.classList.remove('visible');
+    uploadBtn.disabled = true; spinner.classList.remove('visible');
+    result.classList.remove('visible'); errToggle.classList.remove('visible');
+    errWrap.classList.remove('visible'); errVisible = false;
+  }
+})();
+</script>
+
+<%- include('../partials/shell-end') %>

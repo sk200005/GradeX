@@ -4,5 +4,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/js/main.js"></script>
+
+  <!-- At-risk sidebar badge (non-blocking) -->
+  <script>
+  (function () {
+    const badge = document.getElementById('atRiskBadge');
+    if (!badge) return;
+    fetch('/at-risk/data')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.critical > 0) {
+          badge.textContent = data.critical;
+          badge.style.display = 'inline-flex';
+        }
+      })
+      .catch(() => {}); // silent fail — non-critical UI
+  })();
+  </script>
 </body>
 </html>

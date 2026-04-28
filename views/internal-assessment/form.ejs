@@ -1,0 +1,162 @@
+<%- include('../partials/head', { pageTitle }) %>
+<%- include('../partials/shell-start', { pageTitle }) %>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h3><%= assessment._id ? 'Edit Internal Assessment' : 'New Internal Assessment' %></h3>
+      <p>Select a student and subject — the matching template will load component fields automatically.</p>
+    </div>
+    <% if (assessment._id) { %>
+      <div class="metric-preview">
+        Calculated Internal: <strong><%= assessment.calculatedInternal %></strong>
+      </div>
+    <% } %>
+  </div>
+
+  <form action="<%= formAction %>" method="<%= formMethod %>" class="form-grid" id="iaForm">
+
+    <label>
+      Student
+      <select name="student" id="studentSelect" required <%= assessment._id ? 'disabled' : '' %>>
+        <option value="">Select student</option>
+        <% students.forEach((s) => { %>
+          <option value="<%= s._id %>"
+                  data-semester="<%= s.semester %>"
+                  <%= String(assessment.student || '') === String(s._id) ? 'selected' : '' %>>
+            <%= s.rollNumber %> — <%= s.fullName %>
+          </option>
+        <% }) %>
+      </select>
+      <% if (assessment._id) { %>
+        <input type="hidden" name="student" value="<%= assessment.student %>">
+      <% } %>
+    </label>
+
+    <label>
+      Semester
+      <input type="number" name="semester" id="semesterInput" min="1" max="8"
+             value="<%= assessment.semester || '' %>" required readonly
+             style="background:var(--bg-muted);cursor:default" />
+    </label>
+
+    <label class="form-span">
+      Subject
+      <select name="subject" id="subjectSelect" required <%= assessment._id ? 'disabled' : '' %>>
+        <option value="">Select subject</option>
+        <% subjects.forEach((s) => { %>
+          <option value="<%= s._id %>"
+                  <%= String(assessment.subject || '') === String(s._id) ? 'selected' : '' %>>
+            <%= s.subjectCode %> — <%= s.subjectName %>
+          </option>
+        <% }) %>
+      </select>
+      <% if (assessment._id) { %>
+        <input type="hidden" name="subject" value="<%= assessment.subject %>">
+      <% } %>
+    </label>
+
+    <input type="hidden" name="template" id="templateId" value="<%= template ? template._id : '' %>">
+
+    <div class="form-span" id="componentSection">
+      <% if (template && template.components && template.components.length) { %>
+        <div style="margin-bottom:12px">
+          <strong>Component Marks</strong>
+          <span style="color:var(--text-soft);font-size:.88rem;margin-left:8px">
+            Template: <%= template.name %> (Out of <%= template.outOf %>)
+          </span>
+        </div>
+        <div class="component-rows-grid">
+          <div class="component-row-header">
+            <span>Component</span>
+            <span>Max Marks</span>
+            <span>Marks Obtained</span>
+          </div>
+          <% template.components.forEach((comp) => { %>
+            <% const existing = assessment.componentMarks
+                  ? assessment.componentMarks.find((cm) => cm.componentName.toLowerCase() === comp.name.toLowerCase())
+                  : null; %>
+            <div class="component-row">
+              <span style="padding:12px 0;font-weight:600"><%= comp.name %></span>
+              <input type="hidden" name="componentNames" value="<%= comp.name %>">
+              <span style="padding:12px 0;color:var(--text-soft)"><%= comp.maxMarks %></span>
+              <input type="number" name="componentMarks"
+                     min="0" max="<%= comp.maxMarks %>" step="0.5"
+                     value="<%= existing ? existing.marksObtained : '' %>"
+                     placeholder="0 – <%= comp.maxMarks %>" required />
+            </div>
+          <% }) %>
+        </div>
+      <% } else if (!assessment._id) { %>
+        <div id="templatePrompt" style="padding:20px;text-align:center;color:var(--text-soft);background:var(--bg-muted);border-radius:var(--radius-md)">
+          Select a subject above to load component fields from its template.
+        </div>
+      <% } %>
+    </div>
+
+    <div class="form-actions form-span">
+      <a href="/internal-assessment" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <%= assessment._id ? 'Update & Recalculate' : 'Save & Calculate' %>
+      </button>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  const studentSelect = document.getElementById('studentSelect');
+  const semesterInput = document.getElementById('semesterInput');
+  const subjectSelect = document.getElementById('subjectSelect');
+  const templateIdInput = document.getElementById('templateId');
+  const componentSec = document.getElementById('componentSection');
+
+  if (studentSelect) {
+    studentSelect.addEventListener('change', function () {
+      const opt = this.options[this.selectedIndex];
+      if (semesterInput) semesterInput.value = opt.dataset.semester || '';
+    });
+  }
+
+  <% if (!assessment._id) { %>
+  if (subjectSelect) {
+    subjectSelect.addEventListener('change', async function () {
+      const subjectId = this.value;
+      if (!subjectId) {
+        componentSec.innerHTML = '<div id="templatePrompt" style="padding:20px;text-align:center;color:var(--text-soft);background:var(--bg-muted);border-radius:var(--radius-md)">Select a subject above to load component fields from its template.</div>';
+        templateIdInput.value = '';
+        return;
+      }
+      componentSec.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-soft)">Loading template…</div>';
+      try {
+        const res  = await fetch('/assessment-templates?subjectId=' + subjectId);
+        const data = await res.json();
+        if (!data.template) {
+          componentSec.innerHTML = '<div style="padding:20px;text-align:center;background:rgba(217,72,95,.1);color:var(--danger);border-radius:var(--radius-md)">⚠ No template found for this subject. <a href="/assessment-templates/new" style="color:var(--primary)">Create one first.</a></div>';
+          templateIdInput.value = '';
+          return;
+        }
+        const tmpl = data.template;
+        templateIdInput.value = tmpl._id;
+        let html = '<div style="margin-bottom:12px"><strong>Component Marks</strong><span style="color:var(--text-soft);font-size:.88rem;margin-left:8px">Template: ' + tmpl.name + ' (Out of ' + tmpl.outOf + ')</span></div>';
+        html += '<div class="component-rows-grid"><div class="component-row-header"><span>Component</span><span>Max Marks</span><span>Marks Obtained</span></div>';
+        tmpl.components.forEach((comp) => {
+          html += '<div class="component-row">';
+          html += '<span style="padding:12px 0;font-weight:600">' + comp.name + '</span>';
+          html += '<input type="hidden" name="componentNames" value="' + comp.name + '">';
+          html += '<span style="padding:12px 0;color:var(--text-soft)">' + comp.maxMarks + '</span>';
+          html += '<input type="number" name="componentMarks" min="0" max="' + comp.maxMarks + '" step="0.5" placeholder="0\u2013' + comp.maxMarks + '" required />';
+          html += '</div>';
+        });
+        html += '</div>';
+        componentSec.innerHTML = html;
+      } catch (e) {
+        componentSec.innerHTML = '<div style="padding:16px;color:var(--danger)">Error loading template. Please try again.</div>';
+      }
+    });
+  }
+  <% } %>
+})();
+</script>
+
+<%- include('../partials/shell-end') %>

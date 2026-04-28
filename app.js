@@ -16,6 +16,9 @@ const markRoutes = require("./routes/marks");
 const attendanceRoutes = require("./routes/attendance");
 const resultRoutes = require("./routes/results");
 const reportRoutes = require("./routes/reports");
+const assessmentTemplateRoutes = require("./routes/assessmentTemplates");
+const internalAssessmentRoutes = require("./routes/internalAssessment");
+const atRiskRoutes = require("./routes/atRisk");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -77,6 +80,9 @@ app.use("/marks", markRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/results", resultRoutes);
 app.use("/reports", reportRoutes);
+app.use("/assessment-templates", assessmentTemplateRoutes);
+app.use("/internal-assessment", internalAssessmentRoutes);
+app.use("/at-risk", atRiskRoutes);
 
 app.use((req, res) => {
   res.status(404).render("error", {

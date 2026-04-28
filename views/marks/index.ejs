@@ -12,7 +12,10 @@
     <button type="submit" class="btn btn-secondary">Search</button>
   </form>
 
-  <a class="btn btn-primary" href="/marks/new">Add Marks</a>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button id="openMarksUpload" class="btn btn-secondary">⬆ Upload CSV / Excel</button>
+    <a class="btn btn-primary" href="/marks/new">Add Marks</a>
+  </div>
 </section>
 
 <section class="panel">
@@ -66,5 +69,147 @@
     </table>
   </div>
 </section>
+
+<!-- ── Upload Modal ──────────────────────────────────────────────── -->
+<div class="modal" id="marksUploadModal" role="dialog" aria-modal="true" aria-labelledby="marksUploadTitle">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="marksUploadTitle">Bulk Upload Marks</h3>
+      <button class="modal-close" id="closeMarksUpload" aria-label="Close">✕</button>
+    </div>
+
+    <a class="upload-template-link" href="/templates/marks_template.csv" download>
+      ⬇ Download sample template (marks_template.csv)
+    </a>
+
+    <div class="upload-zone" id="marksDropZone">
+      <span class="upload-zone-icon">📂</span>
+      <p><strong>Click to browse</strong> or drag & drop your file here</p>
+      <p>Accepted formats: .csv, .xlsx &nbsp;·&nbsp; Max 5 MB</p>
+      <input type="file" id="marksFileInput" accept=".csv,.xlsx" />
+    </div>
+
+    <div class="file-chip" id="marksFileChip">
+      <span id="marksFileName"></span>
+      <button type="button" id="marksClearFile" aria-label="Remove file">✕</button>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="marksUploadBtn" disabled>Upload</button>
+      <div class="upload-spinner" id="marksSpinner">
+        <div class="spinner-ring"></div>
+        <span>Uploading…</span>
+      </div>
+    </div>
+
+    <div class="upload-result" id="marksResult">
+      <div class="upload-summary" id="marksSummary"></div>
+      <button class="upload-errors-toggle" id="marksErrorsToggle">▶ Show failed rows</button>
+      <div class="upload-errors-table-wrap" id="marksErrorsWrap">
+        <table class="upload-errors-table">
+          <thead><tr><th>#</th><th>Identifier</th><th>Reason</th></tr></thead>
+          <tbody id="marksErrorsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const modal      = document.getElementById('marksUploadModal');
+  const openBtn    = document.getElementById('openMarksUpload');
+  const closeBtn   = document.getElementById('closeMarksUpload');
+  const dropZone   = document.getElementById('marksDropZone');
+  const fileInput  = document.getElementById('marksFileInput');
+  const fileChip   = document.getElementById('marksFileChip');
+  const fileName   = document.getElementById('marksFileName');
+  const clearFile  = document.getElementById('marksClearFile');
+  const uploadBtn  = document.getElementById('marksUploadBtn');
+  const spinner    = document.getElementById('marksSpinner');
+  const result     = document.getElementById('marksResult');
+  const summary    = document.getElementById('marksSummary');
+  const errToggle  = document.getElementById('marksErrorsToggle');
+  const errWrap    = document.getElementById('marksErrorsWrap');
+  const errBody    = document.getElementById('marksErrorsBody');
+  let errVisible   = false;
+
+  openBtn.addEventListener('click', () => { resetModal(); modal.classList.add('active'); });
+  closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+  clearFile.addEventListener('click', () => { fileInput.value = ''; fileChip.classList.remove('visible'); uploadBtn.disabled = true; });
+
+  function setFile(f) {
+    fileName.textContent = f.name;
+    fileChip.classList.add('visible');
+    uploadBtn.disabled = false;
+    result.classList.remove('visible');
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!fileInput.files[0]) return;
+    spinner.classList.add('visible');
+    uploadBtn.disabled = true;
+    result.classList.remove('visible');
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+
+    try {
+      const res  = await fetch('/marks/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      renderResult(data);
+    } catch (e) {
+      renderResult({ success: false, message: 'Network error. Please try again.' });
+    } finally {
+      spinner.classList.remove('visible');
+    }
+  });
+
+  errToggle.addEventListener('click', () => {
+    errVisible = !errVisible;
+    errToggle.textContent = (errVisible ? '▼ Hide' : '▶ Show') + ' failed rows';
+    errWrap.classList.toggle('visible', errVisible);
+  });
+
+  function renderResult(data) {
+    result.classList.add('visible');
+    if (!data.success) {
+      summary.innerHTML = `<div class="upload-stat upload-stat-error">⚠ ${data.message}</div>`;
+      errToggle.classList.remove('visible'); errWrap.classList.remove('visible');
+      return;
+    }
+    summary.innerHTML =
+      `<div class="upload-stat upload-stat-success">✓ ${data.successCount} added successfully</div>` +
+      (data.errorCount ? `<div class="upload-stat upload-stat-error">✕ ${data.errorCount} failed</div>` : '');
+
+    if (data.errors && data.errors.length) {
+      errBody.innerHTML = data.errors.map((e) =>
+        `<tr><td>${e.row}</td><td>${e.identifier || '—'}</td><td class="upload-error-msg">${e.message}</td></tr>`
+      ).join('');
+      errToggle.classList.add('visible');
+      errVisible = false; errWrap.classList.remove('visible');
+      errToggle.textContent = '▶ Show failed rows';
+    } else {
+      errToggle.classList.remove('visible'); errWrap.classList.remove('visible');
+    }
+  }
+
+  function resetModal() {
+    fileInput.value = ''; fileChip.classList.remove('visible');
+    uploadBtn.disabled = true; spinner.classList.remove('visible');
+    result.classList.remove('visible'); errToggle.classList.remove('visible');
+    errWrap.classList.remove('visible'); errVisible = false;
+  }
+})();
+</script>
 
 <%- include('../partials/shell-end') %>
