@@ -17,22 +17,64 @@ const router = express.Router();
 router.get("/", ensureAuthenticated, async (req, res, next) => {
   try {
     const search = (req.query.search || "").trim();
-    const query = search
-      ? {
-          $or: [
-            { rollNumber: { $regex: search, $options: "i" } },
-            { studentName: { $regex: search, $options: "i" } },
-            { subjectName: { $regex: search, $options: "i" } }
-          ]
-        }
-      : {};
+    const branch = req.globalBranch;
+    const semester = (req.query.semester || "").trim();
+    const subjectFilter = req.globalSubject;
+
+    let queryConditions = [];
+
+    let subjectQuery = {};
+    if (branch === 'CS') subjectQuery.department = "Computer Science";
+    if (branch === 'IT') subjectQuery.department = "Information Technology";
+    if (branch === 'ECE') subjectQuery.department = "Electronics";
+
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) subjectQuery.semester = semNum;
+    }
+
+    const filterSubjects = await Subject.find(subjectQuery).select('_id subjectName').sort({ subjectName: 1 }).lean();
+
+    if (search) {
+      queryConditions.push({
+        $or: [
+          { rollNumber: { $regex: search, $options: "i" } },
+          { studentName: { $regex: search, $options: "i" } },
+          { subjectName: { $regex: search, $options: "i" } }
+        ]
+      });
+    }
+
+    if (branch === 'CS') {
+      queryConditions.push({ rollNumber: { $regex: '^CS1', $options: 'i' } });
+    } else if (branch === 'IT') {
+      queryConditions.push({ rollNumber: { $regex: '^IT2', $options: 'i' } });
+    } else if (branch === 'ECE') {
+      queryConditions.push({ rollNumber: { $regex: '^EC3', $options: 'i' } });
+    }
+
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) {
+        queryConditions.push({ semester: semNum });
+      }
+    }
+
+    if (subjectFilter) {
+      queryConditions.push({ subject: subjectFilter });
+    }
+
+    const query = queryConditions.length > 0 ? { $and: queryConditions } : {};
 
     const marks = await Mark.find(query).sort({ createdAt: -1 }).lean();
 
     res.render("marks/index", {
       pageTitle: "Marks Management",
       marks,
-      search
+      search,
+      semester,
+      subjectFilter,
+      filterSubjects
     });
   } catch (error) {
     next(error);

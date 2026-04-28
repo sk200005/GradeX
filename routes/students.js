@@ -8,6 +8,7 @@ const Department = require("../models/Department");
 const Course = require("../models/Course");
 const City = require("../models/City");
 const State = require("../models/State");
+const Subject = require("../models/Subject");
 const { ensureAuthenticated } = require("../middleware/auth");
 const { getAcademicReferenceData } = require("../utils/referenceData");
 const { getErrorMessage } = require("../utils/errors");
@@ -22,16 +23,57 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = 8;
     const search = (req.query.search || "").trim();
-    const query = search
-      ? {
-          $or: [
-            { rollNumber: { $regex: search, $options: "i" } },
-            { fullName: { $regex: search, $options: "i" } },
-            { department: { $regex: search, $options: "i" } },
-            { course: { $regex: search, $options: "i" } }
-          ]
-        }
-      : {};
+    const branch = req.globalBranch;
+    const semester = (req.query.semester || "").trim();
+    const subjectFilter = req.globalSubject;
+
+    let queryConditions = [];
+
+    let subjectQuery = {};
+    if (branch === 'CS') subjectQuery.department = "Computer Science";
+    if (branch === 'IT') subjectQuery.department = "Information Technology";
+    if (branch === 'ECE') subjectQuery.department = "Electronics";
+
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) subjectQuery.semester = semNum;
+    }
+
+    const filterSubjects = await Subject.find(subjectQuery).select('_id subjectName').sort({ subjectName: 1 }).lean();
+
+    if (search) {
+      queryConditions.push({
+        $or: [
+          { rollNumber: { $regex: search, $options: "i" } },
+          { fullName: { $regex: search, $options: "i" } },
+          { department: { $regex: search, $options: "i" } },
+          { course: { $regex: search, $options: "i" } }
+        ]
+      });
+    }
+
+    if (branch === 'CS') {
+      queryConditions.push({ rollNumber: { $regex: '^CS1', $options: 'i' } });
+    } else if (branch === 'IT') {
+      queryConditions.push({ rollNumber: { $regex: '^IT2', $options: 'i' } });
+    } else if (branch === 'ECE') {
+      queryConditions.push({ rollNumber: { $regex: '^EC3', $options: 'i' } });
+    }
+
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) {
+        queryConditions.push({ semester: semNum });
+      }
+    }
+
+    if (subjectFilter) {
+      const marksForSubject = await Mark.find({ subject: subjectFilter }).select('student').lean();
+      const studentIds = marksForSubject.map(m => m.student);
+      queryConditions.push({ _id: { $in: studentIds } });
+    }
+
+    const query = queryConditions.length > 0 ? { $and: queryConditions } : {};
 
     const [students, totalStudents] = await Promise.all([
       Student.find(query)
@@ -46,6 +88,9 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
       pageTitle: "Students",
       students,
       search,
+      semester,
+      subjectFilter,
+      filterSubjects,
       pagination: {
         page,
         limit,

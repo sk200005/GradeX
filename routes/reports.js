@@ -15,7 +15,7 @@ const router = express.Router();
 router.get("/", ensureAuthenticated, async (req, res, next) => {
   try {
     const [reports, warehouseStats] = await Promise.all([
-      getReportsData(),
+      getReportsData(req.globalBranch),
       Promise.all([
         FactResult.countDocuments(),
         DimStudent.countDocuments(),
@@ -57,7 +57,7 @@ router.post("/sync-warehouse", ensureAuthenticated, async (req, res) => {
 
 router.get("/top-students/pdf", ensureAuthenticated, async (req, res, next) => {
   try {
-    const reports = await getReportsData();
+    const reports = await getReportsData(req.globalBranch);
     const document = new PDFDocument({ margin: 40, size: "A4" });
 
     res.setHeader("Content-Type", "application/pdf");

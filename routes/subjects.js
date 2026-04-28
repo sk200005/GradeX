@@ -1,6 +1,7 @@
 const express = require("express");
 
 const Subject = require("../models/Subject");
+const { getDepartmentFromBranch } = require("../utils/branchFilter");
 const Mark = require("../models/Mark");
 const Attendance = require("../models/Attendance");
 const { ensureAuthenticated } = require("../middleware/auth");
@@ -14,7 +15,10 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = 8;
     const search = (req.query.search || "").trim();
-    const query = search
+    const branch = req.globalBranch;
+    const dept = getDepartmentFromBranch(branch);
+    const branchQuery = dept ? { department: dept } : {};
+    let query = search
       ? {
           $or: [
             { subjectCode: { $regex: search, $options: "i" } },
@@ -24,6 +28,7 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
           ]
         }
       : {};
+    query = { ...query, ...branchQuery };
 
     const [subjects, totalSubjects] = await Promise.all([
       Subject.find(query)

@@ -4,6 +4,7 @@ const AlertSettings = require("../models/AlertSettings");
 const Attendance = require("../models/Attendance");
 const Mark = require("../models/Mark");
 const Student = require("../models/Student");
+const { getDepartmentFromBranch } = require("../utils/branchFilter");
 const { ensureAuthenticated } = require("../middleware/auth");
 const { getErrorMessage } = require("../utils/errors");
 

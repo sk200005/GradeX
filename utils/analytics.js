@@ -3,13 +3,42 @@ const Subject = require("../models/Subject");
 const Mark = require("../models/Mark");
 const Attendance = require("../models/Attendance");
 const SemesterResult = require("../models/SemesterResult");
+const { getDepartmentFromBranch } = require("./branchFilter");
 
-async function getDashboardSummary() {
+function getMatchStage(globalBranch) {
+  const dept = getDepartmentFromBranch(globalBranch);
+  return dept ? { department: dept } : {};
+}
+
+function getPipelineMatch(globalBranch) {
+  const dept = getDepartmentFromBranch(globalBranch);
+  return dept ? [{ $match: { department: dept } }] : [];
+}
+
+function getAttendanceMatch(globalBranch) {
+  if (globalBranch === "CS") return { rollNumber: /^CS1/i };
+  if (globalBranch === "IT") return { rollNumber: /^IT2/i };
+  if (globalBranch === "ECE") return { rollNumber: /^EC3/i };
+  return {};
+}
+
+function getAttendancePipelineMatch(globalBranch) {
+  const match = getAttendanceMatch(globalBranch);
+  return Object.keys(match).length ? [{ $match: match }] : [];
+}
+
+
+async function getDashboardSummary(globalBranch) {
+  const matchStage = getMatchStage(globalBranch);
+  const pipelineMatch = getPipelineMatch(globalBranch);
+  const attendancePipelineMatch = getAttendancePipelineMatch(globalBranch);
   const [totalStudents, totalSubjects, resultStats, attendanceStats] =
     await Promise.all([
-      Student.countDocuments(),
-      Subject.countDocuments(),
+      Student.countDocuments(matchStage),
+      Subject.countDocuments(matchStage),
       SemesterResult.aggregate([
+      ...pipelineMatch,
+        ...pipelineMatch,
         {
           $group: {
             _id: "$resultStatus",
@@ -18,6 +47,7 @@ async function getDashboardSummary() {
         }
       ]),
       Attendance.aggregate([
+        ...attendancePipelineMatch,
         {
           $group: {
             _id: null,
@@ -44,7 +74,9 @@ async function getDashboardSummary() {
   };
 }
 
-async function getDashboardCharts() {
+async function getDashboardCharts(globalBranch) {
+  const pipelineMatch = getPipelineMatch(globalBranch);
+  const attendancePipelineMatch = getAttendancePipelineMatch(globalBranch);
   const [
     topStudents,
     subjectPassFail,
@@ -53,6 +85,7 @@ async function getDashboardCharts() {
     semesterResultAnalysis
   ] = await Promise.all([
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$rollNumber",
@@ -64,6 +97,7 @@ async function getDashboardCharts() {
       { $limit: 5 }
     ]),
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: {
@@ -76,6 +110,7 @@ async function getDashboardCharts() {
       { $sort: { "_id.subject": 1 } }
     ]),
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$rollNumber",
@@ -110,6 +145,7 @@ async function getDashboardCharts() {
       { $limit: 8 }
     ]),
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$department",
@@ -119,6 +155,7 @@ async function getDashboardCharts() {
       { $sort: { averageMarks: -1 } }
     ]),
     SemesterResult.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$semester",
@@ -148,7 +185,9 @@ async function getDashboardCharts() {
   };
 }
 
-async function getReportsData() {
+async function getReportsData(globalBranch) {
+  const pipelineMatch = getPipelineMatch(globalBranch);
+  const attendanceMatch = getAttendanceMatch(globalBranch);
   const [
     topTenStudents,
     failedStudentsBySubject,
@@ -158,6 +197,7 @@ async function getReportsData() {
     semesterWiseResults
   ] = await Promise.all([
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$rollNumber",
@@ -170,6 +210,7 @@ async function getReportsData() {
       { $limit: 10 }
     ]),
     Mark.aggregate([
+      ...pipelineMatch,
       { $match: { resultStatus: "Fail" } },
       {
         $group: {
@@ -186,10 +227,11 @@ async function getReportsData() {
       },
       { $sort: { failCount: -1 } }
     ]),
-    Attendance.find({ attendancePercentage: { $lt: 75 } })
+    Attendance.find({ attendancePercentage: { $lt: 75 }, ...attendanceMatch })
       .sort({ attendancePercentage: 1 })
       .lean(),
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $sort: {
           department: 1,
@@ -206,6 +248,7 @@ async function getReportsData() {
       }
     ]),
     Mark.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$subjectName",
@@ -215,6 +258,7 @@ async function getReportsData() {
       { $sort: { averageMarks: -1 } }
     ]),
     SemesterResult.aggregate([
+      ...pipelineMatch,
       {
         $group: {
           _id: "$semester",

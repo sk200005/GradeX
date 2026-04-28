@@ -61,15 +61,29 @@
       </div>
     </div>
 
-    <form class="search-form" method="GET" action="/results">
-      <input
-        type="text"
-        name="search"
-        placeholder="Search semester results"
-        value="<%= search %>"
-      />
-      <button type="submit" class="btn btn-secondary">Search</button>
-    </form>
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+      <form class="search-form" method="GET" action="/results" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="hidden" name="semester" value="<%= typeof semester !== 'undefined' ? semester : '' %>" />
+        
+        <input
+          type="text"
+          name="search"
+          placeholder="Search semester results"
+          value="<%= search %>"
+        />
+        <button type="submit" class="btn btn-secondary">Search</button>
+      </form>
+
+      <div class="filter-groups" style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div class="semester-filters" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=" class="btn <%= !locals.semester ? 'btn-primary' : 'btn-secondary' %>">All Semesters</a>
+          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=3" class="btn <%= locals.semester == '3' ? 'btn-primary' : 'btn-secondary' %>">Sem 3</a>
+          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=4" class="btn <%= locals.semester == '4' ? 'btn-primary' : 'btn-secondary' %>">Sem 4</a>
+          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=5" class="btn <%= locals.semester == '5' ? 'btn-primary' : 'btn-secondary' %>">Sem 5</a>
+          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=6" class="btn <%= locals.semester == '6' ? 'btn-primary' : 'btn-secondary' %>">Sem 6</a>
+        </div>
+      </div>
+    </div>
   </article>
 </section>
 

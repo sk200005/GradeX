@@ -11,8 +11,8 @@ const router = express.Router();
 router.get("/", ensureAuthenticated, async (req, res, next) => {
   try {
     const [summary, charts] = await Promise.all([
-      getDashboardSummary(),
-      getDashboardCharts()
+      getDashboardSummary(req.globalBranch),
+      getDashboardCharts(req.globalBranch)
     ]);
 
     res.render("dashboard", {

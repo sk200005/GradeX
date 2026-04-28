@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#f0f2f5" rx="100"/>
+  <!-- Graduation Cap -->
+  <path d="M100 30 L30 65 L100 100 L170 65 Z" fill="#1a252f"/>
+  <rect x="70" y="80" width="60" height="40" fill="#1a252f"/>
+  <!-- Tassel -->
+  <path d="M170 65 L170 110" stroke="#f1c40f" stroke-width="4"/>
+  <circle cx="170" cy="115" r="8" fill="#f1c40f"/>
+  <!-- Face -->
+  <circle cx="100" cy="120" r="35" fill="#f5cba7"/>
+  <!-- Body -->
+  <path d="M30 200 C30 140 170 140 170 200 Z" fill="#2980b9"/>
+  <!-- Collar -->
+  <path d="M70 200 L100 160 L130 200 Z" fill="#ecf0f1"/>
+  <!-- Tie -->
+  <path d="M95 160 L105 160 L110 200 L100 215 L90 200 Z" fill="#e74c3c"/>
+</svg>

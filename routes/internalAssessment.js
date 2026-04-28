@@ -3,6 +3,7 @@ const express = require("express");
 const InternalAssessment = require("../models/InternalAssessment");
 const AssessmentTemplate = require("../models/AssessmentTemplate");
 const Student = require("../models/Student");
+const { getDepartmentFromBranch } = require("../utils/branchFilter");
 const Subject = require("../models/Subject");
 const Mark = require("../models/Mark");
 const { ensureAuthenticated } = require("../middleware/auth");

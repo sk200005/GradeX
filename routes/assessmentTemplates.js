@@ -1,6 +1,7 @@
 const express = require("express");
 
 const AssessmentTemplate = require("../models/AssessmentTemplate");
+const { getDepartmentFromBranch } = require("../utils/branchFilter");
 const InternalAssessment = require("../models/InternalAssessment");
 const Subject = require("../models/Subject");
 const { ensureAuthenticated } = require("../middleware/auth");

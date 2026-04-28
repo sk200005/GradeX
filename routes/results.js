@@ -10,15 +10,59 @@ const router = express.Router();
 router.get("/", ensureAuthenticated, async (req, res, next) => {
   try {
     const search = (req.query.search || "").trim();
-    const query = search
-      ? {
-          $or: [
-            { rollNumber: { $regex: search, $options: "i" } },
-            { studentName: { $regex: search, $options: "i" } },
-            { department: { $regex: search, $options: "i" } }
-          ]
-        }
-      : {};
+    const branch = req.globalBranch;
+    const semester = (req.query.semester || "").trim();
+    const subjectFilter = req.globalSubject;
+
+    const Subject = require("../models/Subject");
+    const Mark = require("../models/Mark");
+
+    let queryConditions = [];
+
+    let subjectQuery = {};
+    if (branch === 'CS') subjectQuery.department = "Computer Science";
+    if (branch === 'IT') subjectQuery.department = "Information Technology";
+    if (branch === 'ECE') subjectQuery.department = "Electronics";
+
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) subjectQuery.semester = semNum;
+    }
+
+    const filterSubjects = await Subject.find(subjectQuery).select('_id subjectName').sort({ subjectName: 1 }).lean();
+
+    if (search) {
+      queryConditions.push({
+        $or: [
+          { rollNumber: { $regex: search, $options: "i" } },
+          { studentName: { $regex: search, $options: "i" } },
+          { department: { $regex: search, $options: "i" } }
+        ]
+      });
+    }
+
+    if (branch === 'CS') {
+      queryConditions.push({ rollNumber: { $regex: '^CS1', $options: 'i' } });
+    } else if (branch === 'IT') {
+      queryConditions.push({ rollNumber: { $regex: '^IT2', $options: 'i' } });
+    } else if (branch === 'ECE') {
+      queryConditions.push({ rollNumber: { $regex: '^EC3', $options: 'i' } });
+    }
+
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) {
+        queryConditions.push({ semester: semNum });
+      }
+    }
+
+    if (subjectFilter) {
+      const marksForSubject = await Mark.find({ subject: subjectFilter }).select('student').lean();
+      const studentIds = marksForSubject.map(m => m.student);
+      queryConditions.push({ student: { $in: studentIds } });
+    }
+
+    const query = queryConditions.length > 0 ? { $and: queryConditions } : {};
 
     const [results, students] = await Promise.all([
       SemesterResult.find(query).sort({ semester: 1, studentName: 1 }).lean(),
@@ -29,7 +73,10 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
       pageTitle: "Semester Results",
       results,
       students,
-      search
+      search,
+      semester,
+      subjectFilter,
+      filterSubjects
     });
   } catch (error) {
     next(error);

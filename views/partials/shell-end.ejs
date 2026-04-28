@@ -21,5 +21,50 @@
       .catch(() => {}); // silent fail — non-critical UI
   })();
   </script>
+  <!-- Global Filters (Subject & Branch) -->
+  <div style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border-color, #eaeaea);">
+    
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+      <label for="globalSubjectSelect" style="margin: 0; font-weight: 600; color: var(--text-color, #333);">Subject:</label>
+      <select id="globalSubjectSelect" onchange="updateGlobalSubject(this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid var(--border-color, #ccc); outline: none; width: 200px;">
+        <option value="">All Subjects</option>
+        <% if (locals.globalSubjects && locals.globalSubjects.length > 0) { %>
+          <% locals.globalSubjects.forEach(subject => { %>
+            <option value="<%= subject._id %>" <%= locals.globalSubject === subject._id.toString() ? 'selected' : '' %>>
+              <%= subject.subjectName %>
+            </option>
+          <% }) %>
+        <% } %>
+      </select>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+      <label for="globalBranchSelect" style="margin: 0; font-weight: 600; color: var(--text-color, #333);">Branch:</label>
+      <select id="globalBranchSelect" onchange="updateGlobalBranch(this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid var(--border-color, #ccc); outline: none; width: 200px;">
+        <option value="" <%= !locals.globalBranch ? 'selected' : '' %>>All Branches</option>
+        <option value="CS" <%= locals.globalBranch === 'CS' ? 'selected' : '' %>>Computer Science (CS)</option>
+        <option value="IT" <%= locals.globalBranch === 'IT' ? 'selected' : '' %>>Information Tech (IT)</option>
+        <option value="ECE" <%= locals.globalBranch === 'ECE' ? 'selected' : '' %>>Electronics (ECE)</option>
+      </select>
+    </div>
+    
+  </div>
+  <script>
+    function updateGlobalBranch(branch) {
+      fetch('/set-global-branch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch })
+      }).then(() => window.location.reload());
+    }
+    
+    function updateGlobalSubject(subject) {
+      fetch('/set-global-subject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject })
+      }).then(() => window.location.reload());
+    }
+  </script>
 </body>
 </html>

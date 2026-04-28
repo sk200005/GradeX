@@ -7,10 +7,13 @@ const methodOverride = require("method-override");
 require("dotenv").config();
 
 const { ensureDefaultAdmin } = require("./utils/bootstrap");
+const { getDepartmentFromBranch } = require("./utils/branchFilter");
+const Subject = require("./models/Subject");
 
 const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
 const studentRoutes = require("./routes/students");
+const studentProfileRoutes = require("./routes/studentProfiles");
 const subjectRoutes = require("./routes/subjects");
 const markRoutes = require("./routes/marks");
 const attendanceRoutes = require("./routes/attendance");
@@ -56,12 +59,40 @@ app.use(
 );
 app.use(flash());
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.currentUser = req.session.admin || null;
+  res.locals.globalBranch = req.session.globalBranch || "";
+  req.globalBranch = req.session.globalBranch || "";
+
+  res.locals.globalSubject = req.session.globalSubject || "";
+  req.globalSubject = req.session.globalSubject || "";
+
+  let globalSubjects = [];
+  if (req.globalBranch) {
+    const dept = getDepartmentFromBranch(req.globalBranch);
+    if (dept) {
+      globalSubjects = await Subject.find({ department: dept }).select('_id subjectName').sort({ subjectName: 1 }).lean();
+    }
+  } else {
+    globalSubjects = await Subject.find().select('_id subjectName').sort({ subjectName: 1 }).lean();
+  }
+  res.locals.globalSubjects = globalSubjects;
+
   res.locals.successMessages = req.flash("success");
   res.locals.errorMessages = req.flash("error");
   next();
+});
+
+app.post("/set-global-branch", (req, res) => {
+  req.session.globalBranch = req.body.branch;
+  req.session.globalSubject = ""; // Reset subject when branch changes
+  res.json({ success: true });
+});
+
+app.post("/set-global-subject", (req, res) => {
+  req.session.globalSubject = req.body.subject;
+  res.json({ success: true });
 });
 
 app.get("/", (req, res) => {
@@ -74,6 +105,7 @@ app.get("/", (req, res) => {
 
 app.use("/", authRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/student-profiles", studentProfileRoutes);
 app.use("/students", studentRoutes);
 app.use("/subjects", subjectRoutes);
 app.use("/marks", markRoutes);
