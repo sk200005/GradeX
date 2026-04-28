@@ -1,95 +1,117 @@
 <%- include('../partials/head', { pageTitle }) %>
 <%- include('../partials/shell-start', { pageTitle }) %>
 
-<div class="page-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
-  <a href="/student-profiles" class="btn btn-secondary">← Back to Profiles</a>
-  <h2><%= student.fullName %>'s Details</h2>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+  <div style="display: flex; align-items: center; gap: 15px;">
+    <a href="/student-profiles" class="btn btn-secondary">← Back to Profiles</a>
+    <h2 style="margin: 0;"><%= student.fullName %>'s Details</h2>
+  </div>
+  <a href="/students/<%= student._id %>/edit" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+    ✏️ Edit Profile
+  </a>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
   
-  <article class="panel" style="display: flex; flex-direction: column; align-items: center; padding: 30px;">
-    <img src="/images/default-avatar.svg" alt="Student Image" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; border: 4px solid var(--primary-color, #4361ee);">
+  <!-- Profile Summary Card -->
+  <article class="panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px;">
+    <img src="/images/default-avatar.svg" alt="Student Image" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; border: 4px solid var(--primary-color, #4361ee); box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <h3 style="margin-bottom: 10px; font-size: 1.5rem; text-align: center;"><%= student.fullName %></h3>
-    <span class="badge" style="font-size: 1.1rem; padding: 5px 15px; margin-bottom: 20px;"><%= student.rollNumber %></span>
-    
-    <div style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: 15px; border-top: 1px solid var(--border-color, #eee); padding-top: 20px;">
-      
-      <!-- Academic Info -->
-      <h4 style="margin: 0; color: var(--primary-color, #4361ee); font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">Academic</h4>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">Branch:</span>
-        <strong style="text-align: right;"><%= student.department %></strong>
-      </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">Course:</span>
-        <strong style="text-align: right;"><%= student.course %></strong>
-      </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">Semester:</span>
-        <strong style="text-align: right;"><%= student.semester %></strong>
-      </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">CGPA:</span>
-        <strong style="text-align: right;"><%= locals.semesterResult ? semesterResult.cgpa : 'N/A' %></strong>
-      </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">SGPA (Current Sem):</span>
-        <strong style="text-align: right;"><%= locals.semesterResult ? semesterResult.sgpa : 'N/A' %></strong>
-      </div>
+    <span class="badge" style="font-size: 1.1rem; padding: 6px 16px;"><%= student.rollNumber %></span>
+  </article>
 
-      <!-- Personal Info -->
-      <h4 style="margin: 15px 0 0 0; color: var(--primary-color, #4361ee); font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">Personal & Contact</h4>
+  <!-- Academic Info Card -->
+  <article class="panel" style="padding: 25px;">
+    <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--primary-color, #4361ee); font-size: 1.15rem; border-bottom: 1px solid #eaeaea; padding-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+      🎓 Academic Profile
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
       <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">Gender:</span>
-        <strong style="text-align: right;"><%= student.gender %></strong>
+        <span style="color: var(--text-soft, #666); font-weight: 500;">Branch:</span>
+        <strong style="text-align: right; color: var(--text-color, #333);"><%= student.department %></strong>
       </div>
       <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">Email:</span>
-        <strong style="text-align: right; font-size: 0.9em;"><a href="mailto:<%= student.email %>" style="color: var(--primary-color, #4361ee); text-decoration: none;"><%= student.email %></a></strong>
+        <span style="color: var(--text-soft, #666); font-weight: 500;">Course:</span>
+        <strong style="text-align: right; color: var(--text-color, #333);"><%= student.course %></strong>
       </div>
       <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">Phone:</span>
-        <strong style="text-align: right; font-size: 0.9em;"><a href="tel:<%= student.phone %>" style="color: inherit; text-decoration: none;"><%= student.phone %></a></strong>
+        <span style="color: var(--text-soft, #666); font-weight: 500;">Semester:</span>
+        <strong style="text-align: right; color: var(--text-color, #333);"><%= student.semester %></strong>
       </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">State:</span>
-        <strong style="text-align: right;"><%= student.state %></strong>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #eaeaea;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">CGPA:</span>
+        <strong style="text-align: right; font-size: 1.1em; color: var(--primary-color, #4361ee);"><%= locals.semesterResult ? semesterResult.cgpa : 'N/A' %></strong>
       </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: var(--text-soft, #666);">City:</span>
-        <strong style="text-align: right;"><%= student.city %></strong>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">SGPA (Current):</span>
+        <strong style="text-align: right; font-size: 1.1em; color: var(--primary-color, #4361ee);"><%= locals.semesterResult ? semesterResult.sgpa : 'N/A' %></strong>
       </div>
     </div>
   </article>
 
+  <!-- Contact Info Card -->
+  <article class="panel" style="padding: 25px;">
+    <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--primary-color, #4361ee); font-size: 1.15rem; border-bottom: 1px solid #eaeaea; padding-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+      📱 Personal & Contact
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">Gender:</span>
+        <strong style="text-align: right; color: var(--text-color, #333);"><%= student.gender %></strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">Email:</span>
+        <strong style="text-align: right; font-size: 0.95em;">
+          <a href="mailto:<%= student.email %>" style="color: var(--primary-color, #4361ee); text-decoration: none;"><%= student.email %></a>
+        </strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">Phone:</span>
+        <strong style="text-align: right; font-size: 0.95em;">
+          <a href="tel:<%= student.phone %>" style="color: var(--text-color, #333); text-decoration: none;"><%= student.phone %></a>
+        </strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">State:</span>
+        <strong style="text-align: right; color: var(--text-color, #333);"><%= student.state %></strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-soft, #666); font-weight: 500;">City:</span>
+        <strong style="text-align: right; color: var(--text-color, #333);"><%= student.city %></strong>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr;">
   <article class="panel">
-    <div class="panel-heading">
-      <h3>Academic Performance</h3>
+    <div class="panel-heading" style="padding: 20px 25px; border-bottom: 1px solid #eaeaea;">
+      <h3 style="margin: 0; font-size: 1.25rem;">📊 Academic Performance</h3>
     </div>
     
     <div class="table-container">
       <table class="table">
         <thead>
           <tr>
-            <th>Subject</th>
-            <th style="text-align: center;">Internal (Max 100)</th>
-            <th style="text-align: center;">External (Max 100)</th>
-            <th style="text-align: center;">Total</th>
-            <th style="text-align: center;">Grade</th>
-            <th style="text-align: center;">Attendance</th>
+            <th style="padding: 15px;">Subject</th>
+            <th style="text-align: center; padding: 15px;">Internal (Max 100)</th>
+            <th style="text-align: center; padding: 15px;">External (Max 100)</th>
+            <th style="text-align: center; padding: 15px;">Total</th>
+            <th style="text-align: center; padding: 15px;">Grade</th>
+            <th style="text-align: center; padding: 15px;">Attendance</th>
           </tr>
         </thead>
         <tbody>
           <% if (subjectData && subjectData.length > 0) { %>
             <% subjectData.forEach(item => { %>
               <tr>
-                <td style="font-weight: 500;"><%= item.subjectName %></td>
-                <td style="text-align: center;"><%= item.internalMarks != null ? item.internalMarks : 'N/A' %></td>
-                <td style="text-align: center;"><%= item.externalMarks != null ? item.externalMarks : 'N/A' %></td>
-                <td style="text-align: center; font-weight: bold;"><%= item.totalMarks != null ? item.totalMarks : 'N/A' %></td>
-                <td style="text-align: center;"><span class="badge"><%= item.grade || 'N/A' %></span></td>
-                <td style="text-align: center;">
+                <td style="font-weight: 500; padding: 15px;"><%= item.subjectName %></td>
+                <td style="text-align: center; padding: 15px;"><%= item.internalMarks != null ? item.internalMarks : 'N/A' %></td>
+                <td style="text-align: center; padding: 15px;"><%= item.externalMarks != null ? item.externalMarks : 'N/A' %></td>
+                <td style="text-align: center; font-weight: bold; padding: 15px; color: var(--primary-color, #4361ee);"><%= item.totalMarks != null ? item.totalMarks : 'N/A' %></td>
+                <td style="text-align: center; padding: 15px;"><span class="badge" style="padding: 5px 12px;"><%= item.grade || 'N/A' %></span></td>
+                <td style="text-align: center; padding: 15px;">
                   <span class="<%= item.attendancePercentage < 75 ? 'text-danger' : 'text-success' %>" style="font-weight: 600;">
                     <%= item.attendancePercentage %>%
                   </span>
@@ -98,14 +120,13 @@
             <% }) %>
           <% } else { %>
             <tr>
-              <td colspan="6" style="text-align: center; color: var(--text-soft, #666);">No academic records found for this student.</td>
+              <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-soft, #666);">No academic records found for this student.</td>
             </tr>
           <% } %>
         </tbody>
       </table>
     </div>
   </article>
-
 </div>
 
 <%- include('../partials/shell-end') %>
