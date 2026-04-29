@@ -219,7 +219,7 @@ async function seedDatabase() {
   await syncWarehouseCollections();
 
   console.log("Sample data inserted successfully.");
-  console.log("Default admin credentials -> username: admin, password: admin123");
+  console.log("Default admin credentials -> username: admin, password: 123");
   await mongoose.disconnect();
 }
 

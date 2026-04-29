@@ -36,6 +36,7 @@
       <button type="submit" class="btn btn-secondary">⬆ Push All</button>
     </form>
 
+    <a class="btn btn-secondary" href="/assessment-templates">⚙️ Manage Templates</a>
     <a class="btn btn-primary" href="/internal-assessment/new">+ New Assessment</a>
   </div>
 </section>
@@ -114,6 +115,9 @@
                   <button type="submit" class="btn btn-small btn-primary">Push</button>
                 </form>
               <% } %>
+              <form action="/internal-assessment/<%= ia._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this internal assessment record? This cannot be undone.')">
+                <button type="submit" class="btn btn-small" style="background-color: #ef4444; color: white; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px;">Delete</button>
+              </form>
             </td>
           </tr>
         <% }) %>

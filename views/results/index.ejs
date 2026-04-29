@@ -75,12 +75,12 @@
       </form>
 
       <div class="filter-groups" style="display: flex; gap: 20px; flex-wrap: wrap;">
-        <div class="semester-filters" style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=" class="btn <%= !locals.semester ? 'btn-primary' : 'btn-secondary' %>">All Semesters</a>
-          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=3" class="btn <%= locals.semester == '3' ? 'btn-primary' : 'btn-secondary' %>">Sem 3</a>
-          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=4" class="btn <%= locals.semester == '4' ? 'btn-primary' : 'btn-secondary' %>">Sem 4</a>
-          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=5" class="btn <%= locals.semester == '5' ? 'btn-primary' : 'btn-secondary' %>">Sem 5</a>
-          <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=6" class="btn <%= locals.semester == '6' ? 'btn-primary' : 'btn-secondary' %>">Sem 6</a>
+        <div class="upload-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a class="btn btn-secondary" href="/results/export?search=<%= typeof search !== 'undefined' ? search : '' %>&semester=<%= typeof semester !== 'undefined' ? semester : '' %>">⬇ Download Template</a>
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('csvUploadInput').click()">⬆ Upload CSV</button>
+          <form id="csvUploadForm" action="/results/upload" method="POST" enctype="multipart/form-data" style="display: none;">
+            <input type="file" id="csvUploadInput" name="file" accept=".csv" onchange="document.getElementById('csvUploadForm').submit()" />
+          </form>
         </div>
       </div>
     </div>

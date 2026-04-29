@@ -57,7 +57,7 @@
               <a class="btn btn-small btn-secondary" href="/assessment-templates/<%= t._id %>/edit">Edit</a>
               <form action="/assessment-templates/<%= t._id %>?_method=DELETE" method="POST"
                     onsubmit="return confirm('Delete this template? This cannot be undone.')">
-                <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                <button type="submit" class="btn btn-small" style="background-color: #ef4444; color: white; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px;">Delete</button>
               </form>
             </td>
           </tr>

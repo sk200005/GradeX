@@ -400,4 +400,16 @@ async function pushToMarks(ia) {
   }
 }
 
+// ─── DELETE /:id — delete ───────────────────────────────────────────────────
+router.delete("/:id", ensureAuthenticated, async (req, res) => {
+  try {
+    await InternalAssessment.findByIdAndDelete(req.params.id);
+    req.flash("success", "Internal assessment record deleted successfully.");
+    return res.redirect("/internal-assessment");
+  } catch (error) {
+    req.flash("error", getErrorMessage(error, "Unable to delete internal assessment record."));
+    return res.redirect("/internal-assessment");
+  }
+});
+
 module.exports = router;

@@ -36,12 +36,21 @@ async function getDashboardSummary(globalBranch) {
     await Promise.all([
       Student.countDocuments(matchStage),
       Subject.countDocuments(matchStage),
-      SemesterResult.aggregate([
-      ...pipelineMatch,
+      Mark.aggregate([
         ...pipelineMatch,
         {
           $group: {
-            _id: "$resultStatus",
+            _id: "$student",
+            hasFail: {
+              $max: {
+                $cond: [{ $eq: ["$resultStatus", "Fail"] }, 1, 0]
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$hasFail",
             count: { $sum: 1 }
           }
         }
@@ -57,15 +66,21 @@ async function getDashboardSummary(globalBranch) {
       ])
     ]);
 
-  const passedStudents =
-    resultStats.find((item) => item._id === "Pass")?.count || 0;
+  const dept = getDepartmentFromBranch(globalBranch) || "All Departments";
+  const subjectsList = await Subject.find(matchStage).select('subjectName').lean();
+  const subjectNames = subjectsList.map(s => s.subjectName).join(", ");
+
   const failedStudents =
-    resultStats.find((item) => item._id === "Fail")?.count || 0;
+    resultStats.find((item) => item._id === 1)?.count || 0;
+  const passedStudents =
+    resultStats.find((item) => item._id === 0)?.count || 0;
   const averageAttendance = Number(
     (attendanceStats[0]?.averageAttendance || 0).toFixed(2)
   );
 
   return {
+    departmentName: dept,
+    subjectNames,
     totalStudents,
     totalSubjects,
     passedStudents,
@@ -76,13 +91,9 @@ async function getDashboardSummary(globalBranch) {
 
 async function getDashboardCharts(globalBranch) {
   const pipelineMatch = getPipelineMatch(globalBranch);
-  const attendancePipelineMatch = getAttendancePipelineMatch(globalBranch);
   const [
-    topStudents,
-    subjectPassFail,
-    attendanceVsMarks,
-    departmentPerformance,
-    semesterResultAnalysis
+    topThreeStudents,
+    subjectToppers
   ] = await Promise.all([
     Mark.aggregate([
       ...pipelineMatch,
@@ -94,82 +105,19 @@ async function getDashboardCharts(globalBranch) {
         }
       },
       { $sort: { averageMarks: -1 } },
-      { $limit: 5 }
+      { $limit: 3 }
     ]),
     Mark.aggregate([
       ...pipelineMatch,
       {
-        $group: {
-          _id: {
-            subject: "$subjectName",
-            status: "$resultStatus"
-          },
-          count: { $sum: 1 }
-        }
+        $sort: { subjectName: 1, totalMarks: -1 }
       },
-      { $sort: { "_id.subject": 1 } }
-    ]),
-    Mark.aggregate([
-      ...pipelineMatch,
       {
         $group: {
-          _id: "$rollNumber",
+          _id: "$subjectName",
           studentName: { $first: "$studentName" },
-          averageMarks: { $avg: "$totalMarks" }
-        }
-      },
-      {
-        $lookup: {
-          from: "attendance",
-          localField: "_id",
-          foreignField: "rollNumber",
-          as: "attendanceRecords"
-        }
-      },
-      {
-        $addFields: {
-          averageAttendance: {
-            $ifNull: [{ $avg: "$attendanceRecords.attendancePercentage" }, 0]
-          }
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          studentName: 1,
-          averageMarks: { $round: ["$averageMarks", 2] },
-          averageAttendance: { $round: ["$averageAttendance", 2] }
-        }
-      },
-      { $sort: { averageMarks: -1 } },
-      { $limit: 8 }
-    ]),
-    Mark.aggregate([
-      ...pipelineMatch,
-      {
-        $group: {
-          _id: "$department",
-          averageMarks: { $avg: "$totalMarks" }
-        }
-      },
-      { $sort: { averageMarks: -1 } }
-    ]),
-    SemesterResult.aggregate([
-      ...pipelineMatch,
-      {
-        $group: {
-          _id: "$semester",
-          passed: {
-            $sum: {
-              $cond: [{ $eq: ["$resultStatus", "Pass"] }, 1, 0]
-            }
-          },
-          failed: {
-            $sum: {
-              $cond: [{ $eq: ["$resultStatus", "Fail"] }, 1, 0]
-            }
-          },
-          averageSgpa: { $avg: "$sgpa" }
+          rollNumber: { $first: "$rollNumber" },
+          marks: { $first: "$totalMarks" }
         }
       },
       { $sort: { _id: 1 } }
@@ -177,11 +125,8 @@ async function getDashboardCharts(globalBranch) {
   ]);
 
   return {
-    topStudents,
-    subjectPassFail,
-    attendanceVsMarks,
-    departmentPerformance,
-    semesterResultAnalysis
+    topThreeStudents,
+    subjectToppers
   };
 }
 

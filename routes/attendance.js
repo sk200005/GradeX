@@ -3,12 +3,13 @@ const express = require("express");
 const Attendance = require("../models/Attendance");
 const Student = require("../models/Student");
 const Subject = require("../models/Subject");
+const Mark = require("../models/Mark");
 const { ensureAuthenticated } = require("../middleware/auth");
 const { getStudentAndSubjectReferenceData } = require("../utils/referenceData");
 const { getErrorMessage } = require("../utils/errors");
 const upload = require("../middleware/upload");
 const { parseUploadedFile } = require("../utils/parseUpload");
-const { bulkInsert } = require("../utils/bulkUpload");
+const { processUnifiedUpload } = require("../utils/unifiedUpload");
 const { calculateAttendancePercentage } = require("../utils/calculations");
 
 const router = express.Router();
@@ -79,6 +80,84 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
       subjectFilter,
       filterSubjects
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/export", ensureAuthenticated, async (req, res, next) => {
+  try {
+    const branch = req.globalBranch;
+    const semester = (req.query.semester || "").trim();
+    const subjectFilter = req.globalSubject;
+
+    // --- Build student query for current category ---
+    let studentQuery = {};
+    if (branch === 'CS') studentQuery.department = "Computer Science";
+    if (branch === 'IT') studentQuery.department = "Information Technology";
+    if (branch === 'ECE') studentQuery.department = "Electronics";
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) studentQuery.semester = semNum;
+    }
+
+    // --- Build subject query for current category ---
+    let subjectQuery = {};
+    if (branch === 'CS') subjectQuery.department = "Computer Science";
+    if (branch === 'IT') subjectQuery.department = "Information Technology";
+    if (branch === 'ECE') subjectQuery.department = "Electronics";
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) subjectQuery.semester = semNum;
+    }
+    if (subjectFilter) {
+      subjectQuery._id = subjectFilter;
+    }
+
+    const [students, subjects] = await Promise.all([
+      Student.find(studentQuery).sort({ rollNumber: 1 }).lean(),
+      Subject.find(subjectQuery).sort({ subjectName: 1 }).lean()
+    ]);
+
+    const studentIds = students.map(s => s._id);
+    const subjectIds = subjects.map(s => s._id);
+
+    const [marks, attendances] = await Promise.all([
+      Mark.find({ student: { $in: studentIds }, subject: { $in: subjectIds } }).lean(),
+      Attendance.find({ student: { $in: studentIds }, subject: { $in: subjectIds } }).lean()
+    ]);
+
+    const marksMap = new Map();
+    marks.forEach(m => marksMap.set(`${m.student}_${m.subject}`, m));
+
+    const attMap = new Map();
+    attendances.forEach(a => attMap.set(`${a.student}_${a.subject}`, a));
+
+    // --- Generate template rows: one per student-subject pair ---
+    const header = ["Roll No", "Student Name", "Subject", "Total Classes", "Present", "Internal", "External"];
+    const rows = [];
+    for (const student of students) {
+      for (const subject of subjects) {
+        const key = `${student._id}_${subject._id}`;
+        const mark = marksMap.get(key);
+        const att = attMap.get(key);
+
+        rows.push([
+          student.rollNumber,
+          `"${student.fullName}"`,
+          `"${subject.subjectName}"`,
+          att && att.totalClasses !== undefined ? att.totalClasses : "",
+          att && att.presentClasses !== undefined ? att.presentClasses : "",
+          mark && mark.internalMarks !== undefined ? mark.internalMarks : "",
+          mark && mark.externalMarks !== undefined ? mark.externalMarks : ""
+        ]);
+      }
+    }
+
+    const csv = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=\"upload-template.csv\"");
+    return res.send(csv);
   } catch (error) {
     next(error);
   }
@@ -230,7 +309,7 @@ router.delete("/:id", ensureAuthenticated, async (req, res) => {
   }
 });
 
-// ─── Bulk Upload ─────────────────────────────────────────────────────────────
+// ─── Bulk Upload (Unified — updates both Attendance & Marks) ─────────────────
 
 router.post(
   "/upload",
@@ -248,83 +327,8 @@ router.post(
       return res.status(400).json({ success: false, message: parseErr.message });
     }
 
-    if (!rows.length) {
-      return res.json({ success: true, successCount: 0, errorCount: 0, errors: [] });
-    }
-
-    const [allStudents, allSubjects] = await Promise.all([
-      Student.find().lean(),
-      Subject.find().lean()
-    ]);
-
-    const studentMap = new Map(allStudents.map((s) => [s.rollNumber.toLowerCase(), s]));
-    const subjectMap = new Map(allSubjects.map((s) => [s.subjectCode.toLowerCase(), s]));
-
-    const docs = [];
-    const rowErrors = [];
-
-    rows.forEach((row, idx) => {
-      const rowNum = idx + 1;
-      const required = ["rollNumber", "subjectCode", "totalClasses", "presentClasses"];
-      const missing = required.filter((f) => !row[f] && row[f] !== 0);
-
-      if (missing.length) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber || `Row ${rowNum}`, message: `Missing required columns: ${missing.join(", ")}` });
-        return;
-      }
-
-      const student = studentMap.get(row.rollNumber.toLowerCase());
-      if (!student) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `Student with roll number "${row.rollNumber}" not found.` });
-        return;
-      }
-
-      const subject = subjectMap.get(row.subjectCode.toLowerCase());
-      if (!subject) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `Subject with code "${row.subjectCode}" not found.` });
-        return;
-      }
-
-      const totalClasses = Number(row.totalClasses);
-      const presentClasses = Number(row.presentClasses);
-
-      if (isNaN(totalClasses) || totalClasses < 1) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: "totalClasses must be a positive number." });
-        return;
-      }
-      if (isNaN(presentClasses) || presentClasses < 0) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: "presentClasses must be 0 or greater." });
-        return;
-      }
-      if (presentClasses > totalClasses) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: "presentClasses cannot be greater than totalClasses." });
-        return;
-      }
-
-      // Compute percentage inline (insertMany bypasses pre-validate hooks)
-      const attendancePercentage = calculateAttendancePercentage(totalClasses, presentClasses);
-
-      docs.push({
-        student: student._id,
-        rollNumber: student.rollNumber,
-        studentName: student.fullName,
-        subject: subject._id,
-        subjectName: subject.subjectName,
-        totalClasses,
-        presentClasses,
-        attendancePercentage
-      });
-    });
-
-    const { successCount, errors: dbErrors } = await bulkInsert(Attendance, docs);
-    const allErrors = [...rowErrors, ...dbErrors];
-
-    return res.json({
-      success: true,
-      successCount,
-      errorCount: allErrors.length,
-      errors: allErrors
-    });
+    const result = await processUnifiedUpload(rows);
+    return res.json(result);
   }
 );
 

@@ -17,17 +17,19 @@
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button id="openAttendanceUpload" class="btn btn-secondary">⬆ Upload CSV / Excel</button>
+      <a class="btn btn-secondary" href="/attendance/export?search=<%= search %>">⬇ Download Template</a>
       <a class="btn btn-primary" href="/attendance/new">Add Attendance</a>
     </div>
   </div>
 
   <div class="filter-groups" style="display: flex; gap: 20px; flex-wrap: wrap;">
-    <div class="semester-filters" style="display:flex;gap:10px;flex-wrap:wrap;">
-      <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=" class="btn <%= !locals.semester ? 'btn-primary' : 'btn-secondary' %>">All Semesters</a>
-      <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=3" class="btn <%= locals.semester == '3' ? 'btn-primary' : 'btn-secondary' %>">Sem 3</a>
-      <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=4" class="btn <%= locals.semester == '4' ? 'btn-primary' : 'btn-secondary' %>">Sem 4</a>
-      <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=5" class="btn <%= locals.semester == '5' ? 'btn-primary' : 'btn-secondary' %>">Sem 5</a>
-      <a href="?search=<%= typeof search !== 'undefined' ? search : '' %>&branch=<%= typeof branch !== 'undefined' ? branch : '' %>&semester=6" class="btn <%= locals.semester == '6' ? 'btn-primary' : 'btn-secondary' %>">Sem 6</a>
+    <div class="subject-filters" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="updateGlobalSubject('')" class="btn <%= !locals.globalSubject ? 'btn-primary' : 'btn-secondary' %>">All Subjects</button>
+      <% if (locals.filterSubjects && locals.filterSubjects.length > 0) { %>
+        <% filterSubjects.forEach(sub => { %>
+          <button onclick="updateGlobalSubject('<%= sub._id %>')" class="btn <%= locals.globalSubject === sub._id.toString() ? 'btn-primary' : 'btn-secondary' %>"><%= sub.subjectName %></button>
+        <% }) %>
+      <% } %>
     </div>
   </div>
 </section>
@@ -88,9 +90,13 @@
       <button class="modal-close" id="closeAttendanceUpload" aria-label="Close">✕</button>
     </div>
 
-    <a class="upload-template-link" href="/templates/attendance_template.csv" download>
-      ⬇ Download sample template (attendance_template.csv)
+    <a class="upload-template-link" href="/attendance/export" download>
+      ⬇ Download CSV template (pre-filled with student data)
     </a>
+
+    <div style="padding:0 20px;margin-bottom:10px;">
+      <p style="font-size:13px;color:var(--text-secondary);margin:0;">CSV columns: <strong>Roll No, Student Name, Subject, Total Classes, Present, Internal, External</strong>.<br/>This upload updates <em>both</em> Attendance and Marks simultaneously.</p>
+    </div>
 
     <div class="upload-zone" id="attendanceDropZone">
       <span class="upload-zone-icon">📂</span>
@@ -198,7 +204,7 @@
       return;
     }
     summary.innerHTML =
-      `<div class="upload-stat upload-stat-success">✓ ${data.successCount} added successfully</div>` +
+      `<div class="upload-stat upload-stat-success">✓ ${data.successCount} records updated (Attendance & Marks)</div>` +
       (data.errorCount ? `<div class="upload-stat upload-stat-error">✕ ${data.errorCount} failed</div>` : '');
 
     if (data.errors && data.errors.length) {

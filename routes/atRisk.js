@@ -11,7 +11,7 @@ const { getErrorMessage } = require("../utils/errors");
 const router = express.Router();
 
 // ─── Core query: build the at-risk student list ──────────────────────────────
-async function buildAtRiskList(settings) {
+async function buildAtRiskList(settings, branch) {
   const {
     attendanceThreshold,
     internalMarksThreshold,
@@ -62,9 +62,13 @@ async function buildAtRiskList(settings) {
   if (atRiskIds.size === 0) return [];
 
   // 4. Fetch student documents for all at-risk ids
-  const students = await Student.find({
-    _id: { $in: [...atRiskIds] }
-  }).lean();
+  let studentQuery = { _id: { $in: [...atRiskIds] } };
+  const globalDept = getDepartmentFromBranch(branch);
+  if (globalDept) {
+    studentQuery.department = globalDept;
+  }
+
+  const students = await Student.find(studentQuery).lean();
 
   const studentById = new Map(students.map((s) => [String(s._id), s]));
 
@@ -132,7 +136,7 @@ async function buildAtRiskList(settings) {
 router.get("/", ensureAuthenticated, async (req, res, next) => {
   try {
     const settings = await AlertSettings.getSingleton();
-    const allProfiles = await buildAtRiskList(settings);
+    const allProfiles = await buildAtRiskList(settings, req.globalBranch);
 
     // Derive filter options from data
     const departments = [...new Set(allProfiles.map((p) => p.department))].sort();
@@ -169,7 +173,7 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
 router.get("/data", ensureAuthenticated, async (req, res, next) => {
   try {
     const settings = await AlertSettings.getSingleton();
-    const profiles = await buildAtRiskList(settings);
+    const profiles = await buildAtRiskList(settings, req.globalBranch);
 
     const critical = profiles.filter((p) => p.riskLevel === "critical").length;
     const warning  = profiles.filter((p) => p.riskLevel === "warning").length;
@@ -213,7 +217,7 @@ router.post("/settings", ensureAuthenticated, async (req, res) => {
 router.get("/export", ensureAuthenticated, async (req, res, next) => {
   try {
     const settings = await AlertSettings.getSingleton();
-    let profiles = await buildAtRiskList(settings);
+    let profiles = await buildAtRiskList(settings, req.globalBranch);
 
     const { department, course, riskLevel } = req.query;
     if (department) profiles = profiles.filter((p) => p.department === department);

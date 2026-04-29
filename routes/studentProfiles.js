@@ -50,6 +50,61 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
   }
 });
 
+router.get("/export", ensureAuthenticated, async (req, res, next) => {
+  try {
+    const search = (req.query.search || "").trim();
+    const branch = req.globalBranch;
+    const subjectFilter = req.globalSubject;
+    
+    let queryConditions = [];
+    
+    const dept = getDepartmentFromBranch(branch);
+    if (dept) {
+      queryConditions.push({ department: dept });
+    }
+    
+    if (search) {
+      queryConditions.push({
+        $or: [
+          { rollNumber: { $regex: search, $options: "i" } },
+          { fullName: { $regex: search, $options: "i" } }
+        ]
+      });
+    }
+
+    if (subjectFilter) {
+      const marksForSubject = await Mark.find({ subject: subjectFilter }).select('student').lean();
+      const studentIds = marksForSubject.map(m => m.student);
+      queryConditions.push({ _id: { $in: studentIds } });
+    }
+    
+    const query = queryConditions.length > 0 ? { $and: queryConditions } : {};
+    
+    const students = await Student.find(query).sort({ rollNumber: 1 }).lean();
+    
+    const header = ["Roll Number", "Full Name", "Gender", "Email", "Phone", "Department", "Course", "City", "State", "Semester"];
+    const rows = students.map((s) => [
+      s.rollNumber,
+      `"${s.fullName}"`,
+      s.gender || "",
+      s.email || "",
+      s.phone || "",
+      `"${s.department}"`,
+      `"${s.course}"`,
+      `"${s.city || ""}"`,
+      `"${s.state || ""}"`,
+      s.semester
+    ]);
+
+    const csv = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=\"students-export.csv\"");
+    return res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/:id", ensureAuthenticated, async (req, res, next) => {
   try {
     const student = await Student.findById(req.params.id).lean();

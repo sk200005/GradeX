@@ -7,9 +7,12 @@
     <h3><%= student.fullName %></h3>
     <p><%= student.rollNumber %> • <%= student.department %> • Semester <%= student.semester %></p>
   </div>
-  <div class="hero-actions">
+  <div class="hero-actions" style="display: flex; gap: 10px; align-items: center;">
     <a href="/students/<%= student._id %>/edit" class="btn btn-secondary">Edit Profile</a>
     <a href="/marks/marksheet/<%= student._id %>" class="btn btn-primary" target="_blank">Print Marksheet</a>
+    <form action="/students/<%= student._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this student, including all their marks and attendance records? This cannot be undone.')" style="margin: 0;">
+      <button type="submit" class="btn btn-danger" style="background-color: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">Delete Student</button>
+    </form>
   </div>
 </section>
 

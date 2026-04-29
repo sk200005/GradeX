@@ -8,7 +8,7 @@ async function ensureDefaultAdmin() {
     return existingAdmin;
   }
 
-  const hashedPassword = await bcrypt.hash("admin123", 10);
+  const hashedPassword = await bcrypt.hash("123", 10);
 
   return Admin.create({
     username: "admin",

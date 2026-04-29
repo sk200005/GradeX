@@ -293,53 +293,61 @@ router.post(
 
     rows.forEach((row, idx) => {
       const rowNum = idx + 1;
-      const required = ["rollNumber", "fullName", "gender", "email", "phone", "department", "course", "city", "state", "semester"];
-      const missing = required.filter((f) => !row[f] && row[f] !== 0);
+      
+      // Map variations of headers
+      const rollNum = row.rollNumber || row["Roll Number"] || row["Roll No"];
+      const fName = row.fullName || row["Full Name"];
+      const dept = row.department || row["Department"];
+      const crs = row.course || row["Course"];
+      const sem = row.semester || row["Semester"];
+      const cty = row.city || row["City"];
+      const st = row.state || row["State"];
+      const gen = row.gender || row["Gender"];
+      const mail = row.email || row["Email"];
+      const ph = row.phone || row["Phone"];
 
-      if (missing.length) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber || `Row ${rowNum}`, message: `Missing required columns: ${missing.join(", ")}` });
+      if (!rollNum || !dept || !crs || !sem) {
+        const missing = [];
+        if (!rollNum) missing.push("Roll Number");
+        if (!dept) missing.push("Department");
+        if (!crs) missing.push("Course");
+        if (!sem) missing.push("Semester");
+        
+        rowErrors.push({ row: rowNum, identifier: rollNum || `Row ${rowNum}`, message: `Missing required columns: ${missing.join(", ")}` });
         return;
       }
 
-      const deptName = deptMap.get(row.department.toLowerCase());
-      const courseName = courseMap.get(row.course.toLowerCase());
-      const cityName = cityMap.get(row.city.toLowerCase());
-      const stateName = stateMap.get(row.state.toLowerCase());
+      const deptName = deptMap.get(dept.toLowerCase());
+      const courseName = courseMap.get(crs.toLowerCase());
+      const cityName = cty ? (cityMap.get(cty.toLowerCase()) || cty) : "N/A";
+      const stateName = st ? (stateMap.get(st.toLowerCase()) || st) : "N/A";
 
       if (!deptName) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `Department not found: "${row.department}"` });
+        rowErrors.push({ row: rowNum, identifier: rollNum, message: `Department not found: "${dept}"` });
         return;
       }
       if (!courseName) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `Course not found: "${row.course}"` });
-        return;
-      }
-      if (!cityName) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `City not found: "${row.city}"` });
-        return;
-      }
-      if (!stateName) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: `State not found: "${row.state}"` });
+        rowErrors.push({ row: rowNum, identifier: rollNum, message: `Course not found: "${crs}"` });
         return;
       }
 
-      const semester = Number(row.semester);
-      if (!semester || semester < 1 || semester > 8) {
-        rowErrors.push({ row: rowNum, identifier: row.rollNumber, message: "Semester must be a number between 1 and 8." });
+      const semesterNum = Number(sem);
+      if (!semesterNum || semesterNum < 1 || semesterNum > 8) {
+        rowErrors.push({ row: rowNum, identifier: rollNum, message: "Semester must be a number between 1 and 8." });
         return;
       }
 
       docs.push({
-        rollNumber: row.rollNumber,
-        fullName: row.fullName,
-        gender: row.gender,
-        email: row.email,
-        phone: row.phone,
+        rollNumber: rollNum,
+        fullName: fName || `Student ${rollNum}`,
+        gender: gen && ["Male", "Female", "Other"].includes(gen) ? gen : "Other",
+        email: mail || `${rollNum.toLowerCase()}@gradex.edu`,
+        phone: ph || "0000000000",
         department: deptName,
         course: courseName,
-        city: cityName,
-        state: stateName,
-        semester
+        city: cityName || "N/A",
+        state: stateName || "N/A",
+        semester: semesterNum
       });
     });
 

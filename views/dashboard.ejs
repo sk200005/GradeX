@@ -1,98 +1,132 @@
 <%- include('partials/head', { pageTitle }) %>
 <%- include('partials/shell-start', { pageTitle }) %>
 
-<section class="hero-panel">
-  <div>
-    <span class="eyebrow">Overview</span>
-    <h3>Welcome to the academic analytics dashboard</h3>
-    <p>
-      Track student records, semester outcomes, attendance, and performance
-      trends from one place.
-    </p>
-  </div>
-  <div class="hero-actions">
-    <a class="btn btn-primary" href="/students/new">Add Student</a>
-    <a class="btn btn-secondary" href="/reports">View Reports</a>
+<section class="hero-panel" style="background: linear-gradient(135deg, var(--primary-strong), var(--primary)); color: white; padding: 40px; border-radius: var(--radius-xl); margin-bottom: 30px; box-shadow: var(--shadow); border: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; width: 100%;">
+    <div style="flex: 1; min-width: 300px;">
+      <p style="color: rgba(255,255,255,0.85); font-size: 1.2rem; margin: 0 0 5px 0; font-weight: 500;">Academic Dashboard</p>
+      <h1 style="color: white; font-size: clamp(2.5rem, 5vw, 3.5rem); margin: 0; font-family: 'Space Grotesk', sans-serif; letter-spacing: -1px;"><%= summary.departmentName %></h1>
+    </div>
+    <div class="hero-actions" style="margin-top: 0;">
+      <a class="btn btn-secondary" style="background: white; color: #111; border: none; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" href="/students/new">+ Add Student</a>
+      <a class="btn btn-secondary" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4);" href="/reports">View Reports</a>
+    </div>
   </div>
 </section>
 
-<section class="stat-grid">
-  <article class="stat-card">
-    <p>Total Students</p>
-    <h3><%= summary.totalStudents %></h3>
+<section class="stat-grid" style="margin-bottom: 30px;">
+  <article class="stat-card" style="background: var(--bg-soft); border-left: 5px solid var(--success); display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <p style="color: var(--text-soft); font-size: 0.95rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Passed</p>
+      <span style="background: rgba(13, 159, 110, 0.15); color: var(--success); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">PASS</span>
+    </div>
+    <h3 style="font-size: 2.8rem; color: var(--text); margin: 0;"><%= summary.passedStudents %></h3>
   </article>
-  <article class="stat-card">
-    <p>Total Subjects</p>
-    <h3><%= summary.totalSubjects %></h3>
+  
+  <article class="stat-card" style="background: var(--bg-soft); border-left: 5px solid var(--danger); display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <p style="color: var(--text-soft); font-size: 0.95rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Failed</p>
+      <span style="background: rgba(217, 72, 95, 0.15); color: var(--danger); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">FAIL</span>
+    </div>
+    <h3 style="font-size: 2.8rem; color: var(--text); margin: 0;"><%= summary.failedStudents %></h3>
   </article>
-  <article class="stat-card">
-    <p>Passed Students</p>
-    <h3><%= summary.passedStudents %></h3>
-  </article>
-  <article class="stat-card">
-    <p>Failed Students</p>
-    <h3><%= summary.failedStudents %></h3>
-  </article>
-  <article class="stat-card accent-card">
-    <p>Average Attendance</p>
-    <h3><%= summary.averageAttendance %>%</h3>
+  
+  <article class="stat-card" style="background: var(--bg-soft); border-left: 5px solid var(--warning); display: flex; flex-direction: column; justify-content: center; box-shadow: var(--shadow);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <p style="color: var(--text-soft); font-size: 0.95rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Avg Attendance</p>
+      <span style="background: rgba(240, 162, 2, 0.15); color: var(--warning); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">RATE</span>
+    </div>
+    <h3 style="font-size: 2.8rem; color: var(--text); margin: 0;"><%= summary.averageAttendance %>%</h3>
   </article>
 </section>
 
-<section class="chart-grid">
-  <article class="panel">
-    <div class="panel-heading">
-      <h3>Top Students by Marks</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-bottom: 30px; align-items: start;">
+  
+  <!-- Top 3 Students -->
+  <article class="panel" style="background: var(--bg-soft); overflow: hidden; padding: 0;">
+    <div class="panel-heading" style="padding: 20px 25px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.02); margin: 0;">
+      <h3 style="margin: 0; font-size: 1.2rem; color: var(--text);">🏆 Top 3 Students (Overall)</h3>
     </div>
-    <canvas id="topStudentsChart"></canvas>
+    <div style="padding: 25px; display: flex; flex-direction: column; gap: 15px;">
+      <% if (charts.topThreeStudents && charts.topThreeStudents.length > 0) { %>
+        <% const medals = ['🥇', '🥈', '🥉']; const colors = ['#ffd700', '#c0c0c0', '#cd7f32']; %>
+        <% charts.topThreeStudents.forEach((student, index) => { %>
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); border-left: 4px solid <%= colors[index] || '#ccc' %>; transition: transform 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <span style="font-size: 1.8rem;"><%= medals[index] || '' %></span>
+              <div>
+                <h4 style="margin: 0; font-size: 1.1rem; color: var(--text);"><%= student.fullName %></h4>
+                <p style="margin: 2px 0 0 0; font-size: 0.85rem; color: var(--text-soft);"><%= student._id %></p>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <strong style="font-size: 1.3rem; color: var(--primary);"><%= student.averageMarks.toFixed(1) %></strong>
+              <p style="margin: 0; font-size: 0.75rem; color: var(--text-soft); text-transform: uppercase; font-weight: 600;">Avg Marks</p>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p style="text-align: center; color: var(--text-soft); margin: 0; padding: 20px;">No marks data available yet.</p>
+      <% } %>
+    </div>
   </article>
 
-  <article class="panel">
-    <div class="panel-heading">
-      <h3>Subject-wise Pass/Fail</h3>
+  <!-- Subject Toppers -->
+  <article class="panel" style="background: var(--bg-soft); overflow: hidden; padding: 0;">
+    <div class="panel-heading" style="padding: 20px 25px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.02); margin: 0;">
+      <h3 style="margin: 0; font-size: 1.2rem; color: var(--text);">⭐ Subject-wise Toppers</h3>
     </div>
-    <canvas id="subjectPassFailChart"></canvas>
+    <div class="table-container" style="padding: 0;">
+      <table class="table data-table" style="width: 100%; border-collapse: collapse; margin: 0; min-width: 100%;">
+        <thead style="background: rgba(0,0,0,0.02);">
+          <tr>
+            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--border); color: var(--text-soft); font-weight: 600; text-transform: uppercase; font-size: 0.85rem;">Subject</th>
+            <th style="padding: 15px 25px; text-align: left; border-bottom: 2px solid var(--border); color: var(--text-soft); font-weight: 600; text-transform: uppercase; font-size: 0.85rem;">Topper</th>
+            <th style="padding: 15px 25px; text-align: center; border-bottom: 2px solid var(--border); color: var(--text-soft); font-weight: 600; text-transform: uppercase; font-size: 0.85rem;">Marks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (charts.subjectToppers && charts.subjectToppers.length > 0) { %>
+            <% charts.subjectToppers.forEach(topper => { %>
+              <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.02)'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 15px 25px; font-weight: 500; color: var(--text);"><%= topper._id %></td>
+                <td style="padding: 15px 25px;">
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 600; color: var(--primary);"><%= topper.studentName %></span>
+                    <span style="font-size: 0.8rem; color: var(--text-soft);"><%= topper.rollNumber %></span>
+                  </div>
+                </td>
+                <td style="padding: 15px 25px; text-align: center;">
+                  <span style="background: rgba(13, 159, 110, 0.15); color: var(--success); font-weight: bold; padding: 4px 10px; border-radius: 6px;"><%= topper.marks %></span>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-soft);">No subject records found.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
   </article>
 
-  <article class="panel">
-    <div class="panel-heading">
-      <h3>Attendance vs Marks</h3>
-    </div>
-    <canvas id="attendanceMarksChart"></canvas>
-  </article>
-
-  <article class="panel">
-    <div class="panel-heading">
-      <h3>Department Performance</h3>
-    </div>
-    <canvas id="departmentPerformanceChart"></canvas>
-  </article>
-
-  <article class="panel panel-wide">
-    <div class="panel-heading">
-      <h3>Semester Result Analysis</h3>
-    </div>
-    <canvas id="semesterResultChart"></canvas>
-  </article>
-</section>
-
-<script>
-  window.dashboardData = <%- JSON.stringify(charts) %>;
-</script>
+</div>
 
 <!-- ── At-Risk Students Widget ────────────────────────────────────────────── -->
-<section class="panel" id="atRiskWidget" style="display:none">
-  <div class="panel-heading">
+<section class="panel" id="atRiskWidget" style="display:none; border-left: 5px solid var(--danger);">
+  <div class="panel-heading" style="padding: 20px 25px; border-bottom: 1px solid var(--border); margin: -22px -22px 20px -22px;">
     <div>
-      <h3>⚠ At-Risk Students</h3>
-      <p>Students flagged for low attendance or marks based on current thresholds.</p>
+      <h3 style="margin: 0; color: var(--danger); font-size: 1.2rem;">⚠ At-Risk Students</h3>
+      <p style="margin: 5px 0 0 0; color: var(--text-soft); font-size: 0.9rem;">Students flagged for low attendance or marks based on current thresholds.</p>
     </div>
     <a href="/at-risk" class="btn btn-small btn-secondary">View All →</a>
   </div>
 
-  <div id="atRiskBadges" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap"></div>
-
-  <div id="atRiskList"></div>
+  <div style="padding-bottom: 5px;">
+    <div id="atRiskBadges" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"></div>
+    <div id="atRiskList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+  </div>
 </section>
 
 <script>
@@ -108,8 +142,8 @@
       widget.style.display = '';
 
       badges.innerHTML =
-        (data.critical ? `<span class="atrisk-badge atrisk-critical">🔴 ${data.critical} Critical</span>` : '') +
-        (data.warning  ? `<span class="atrisk-badge atrisk-warning">🟡 ${data.warning} Warning</span>`  : '');
+        (data.critical ? `<span class="atrisk-badge atrisk-critical" style="padding: 5px 12px; border-radius: 20px; background: rgba(217,72,95,0.15); color: var(--danger); font-weight: 600; font-size: 0.85rem;">🔴 ${data.critical} Critical</span>` : '') +
+        (data.warning  ? `<span class="atrisk-badge atrisk-warning" style="padding: 5px 12px; border-radius: 20px; background: rgba(240,162,2,0.15); color: var(--warning); font-weight: 600; font-size: 0.85rem;">🟡 ${data.warning} Warning</span>`  : '');
 
       if (!data.students || !data.students.length) {
         list.innerHTML = '<p style="color:var(--text-soft)">No at-risk students found.</p>';
@@ -117,14 +151,14 @@
       }
 
       list.innerHTML = data.students.map((s) => `
-        <div class="atrisk-row ${s.riskLevel === 'critical' ? 'atrisk-row-critical' : 'atrisk-row-warning'}">
+        <div class="atrisk-row ${s.riskLevel === 'critical' ? 'atrisk-row-critical' : 'atrisk-row-warning'}" style="padding: 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); display: flex; justify-content: space-between; align-items: center;">
           <div class="atrisk-student-info">
-            <strong>${s.fullName}</strong>
-            <span style="color:var(--text-soft);font-size:.87rem">${s.rollNumber} · ${s.department}</span>
+            <strong style="color: var(--text); font-size: 1.05rem;">${s.fullName}</strong>
+            <span style="color:var(--text-soft);font-size:.85rem; display: block; margin-top: 3px;">${s.rollNumber} · ${s.department}</span>
           </div>
-          <div class="atrisk-pills">
-            ${s.issues.slice(0, 2).map((issue) => `<span class="atrisk-pill">${issue}</span>`).join('')}
-            ${s.issues.length > 2 ? `<span class="atrisk-pill atrisk-pill-more">+${s.issues.length - 2} more</span>` : ''}
+          <div class="atrisk-pills" style="display: flex; gap: 8px;">
+            ${s.issues.slice(0, 2).map((issue) => `<span class="atrisk-pill" style="background: var(--bg-soft); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text-soft);">${issue}</span>`).join('')}
+            ${s.issues.length > 2 ? `<span class="atrisk-pill atrisk-pill-more" style="background: transparent; color: var(--text-soft); font-size: 0.8rem; align-self: center;">+${s.issues.length - 2} more</span>` : ''}
           </div>
         </div>
       `).join('');

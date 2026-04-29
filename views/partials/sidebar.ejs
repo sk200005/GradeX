@@ -15,15 +15,35 @@
     <a class="<%= currentPath.startsWith('/attendance') ? 'active' : '' %>" href="/attendance">Attendance</a>
     <a class="<%= currentPath.startsWith('/results') ? 'active' : '' %>" href="/results">Semester Results</a>
     <a class="<%= currentPath.startsWith('/reports') ? 'active' : '' %>" href="/reports">Reports</a>
-    <a class="<%= currentPath.startsWith('/assessment-templates') ? 'active' : '' %>" href="/assessment-templates">Assessment Templates</a>
-    <a class="<%= currentPath.startsWith('/internal-assessment') ? 'active' : '' %>" href="/internal-assessment">Internal Assessment</a>
+    <a class="<%= currentPath.startsWith('/internal-assessment') || currentPath.startsWith('/assessment-templates') ? 'active' : '' %>" href="/internal-assessment">Internal Assessment</a>
     <a class="<%= currentPath.startsWith('/at-risk') ? 'active' : '' %>" href="/at-risk" id="atRiskNavLink">
       At-Risk Students <span class="nav-badge" id="atRiskBadge" style="display:none"></span>
     </a>
   </nav>
 
-  <div class="sidebar-footer">
-    <p>Default admin</p>
-    <strong>admin / admin123</strong>
+  <div class="sidebar-footer" style="padding: 20px; display: flex; flex-direction: column; gap: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <label for="globalSubjectSelect" style="margin: 0; font-weight: 500; color: rgba(255, 255, 255, 0.8); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Subject</label>
+      <select id="globalSubjectSelect" onchange="updateGlobalSubject(this.value)" style="padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.15); outline: none; background: rgba(255, 255, 255, 0.05); color: white; font-size: 14px; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22rgba(255,255,255,0.6)%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 10px auto; cursor: pointer; transition: all 0.2s ease;">
+        <option value="" style="color: #333;">All Subjects</option>
+        <% if (locals.globalSubjects && locals.globalSubjects.length > 0) { %>
+          <% locals.globalSubjects.forEach(subject => { %>
+            <option value="<%= subject._id %>" style="color: #333;" <%= locals.globalSubject === subject._id.toString() ? 'selected' : '' %>>
+              <%= subject.subjectName %>
+            </option>
+          <% }) %>
+        <% } %>
+      </select>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <label for="globalBranchSelect" style="margin: 0; font-weight: 500; color: rgba(255, 255, 255, 0.8); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Branch</label>
+      <select id="globalBranchSelect" onchange="updateGlobalBranch(this.value)" style="padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.15); outline: none; background: rgba(255, 255, 255, 0.05); color: white; font-size: 14px; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22rgba(255,255,255,0.6)%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 10px auto; cursor: pointer; transition: all 0.2s ease;">
+        <option value="" style="color: #333;" <%= !locals.globalBranch ? 'selected' : '' %>>All Branches</option>
+        <option value="CS" style="color: #333;" <%= locals.globalBranch === 'CS' ? 'selected' : '' %>>Computer Science (CS)</option>
+        <option value="IT" style="color: #333;" <%= locals.globalBranch === 'IT' ? 'selected' : '' %>>Information Tech (IT)</option>
+        <option value="ECE" style="color: #333;" <%= locals.globalBranch === 'ECE' ? 'selected' : '' %>>Electronics (ECE)</option>
+      </select>
+    </div>
   </div>
 </aside>

@@ -4,6 +4,8 @@ const SemesterResult = require("../models/SemesterResult");
 const Student = require("../models/Student");
 const { ensureAuthenticated } = require("../middleware/auth");
 const { getErrorMessage } = require("../utils/errors");
+const upload = require("../middleware/upload");
+const { parseUploadedFile } = require("../utils/parseUpload");
 
 const router = express.Router();
 
@@ -78,6 +80,41 @@ router.get("/", ensureAuthenticated, async (req, res, next) => {
       subjectFilter,
       filterSubjects
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/export", ensureAuthenticated, async (req, res, next) => {
+  try {
+    const branch = req.globalBranch;
+    const semester = (req.query.semester || "").trim();
+
+    let studentQuery = {};
+    if (branch === 'CS') studentQuery.department = "Computer Science";
+    if (branch === 'IT') studentQuery.department = "Information Technology";
+    if (branch === 'ECE') studentQuery.department = "Electronics";
+    if (semester) {
+      const semNum = Number(semester);
+      if (!isNaN(semNum)) studentQuery.semester = semNum;
+    }
+
+    const students = await Student.find(studentQuery).sort({ rollNumber: 1 }).lean();
+
+    const header = ["Roll No", "Student Name", "Semester", "SGPA", "CGPA", "Pass"];
+    const rows = students.map((s) => [
+      s.rollNumber,
+      `"${s.fullName}"`,
+      s.semester || "",
+      "",
+      "",
+      ""
+    ]);
+
+    const csv = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=\"results-upload-template.csv\"");
+    return res.send(csv);
   } catch (error) {
     next(error);
   }
@@ -185,6 +222,52 @@ router.delete("/:id", ensureAuthenticated, async (req, res) => {
       "error",
       getErrorMessage(error, "Unable to delete semester result.")
     );
+    return res.redirect("/results");
+  }
+});
+
+router.post("/upload", ensureAuthenticated, upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      req.flash("error", "No file uploaded.");
+      return res.redirect("/results");
+    }
+
+    const rows = await parseUploadedFile(req.file.buffer, req.file.originalname);
+    let successCount = 0;
+    
+    for (const row of rows) {
+      const rollNumber = row["Roll No"] || row.rollNumber;
+      const semester = Number(row["Semester"] || row.semester);
+      const sgpa = Number(row["SGPA"] || row.sgpa);
+      const cgpa = Number(row["CGPA"] || row.cgpa);
+      const resultStatus = row["Pass"] || row["Status"] || row.resultStatus;
+
+      if (!rollNumber || isNaN(semester) || isNaN(sgpa) || isNaN(cgpa) || !resultStatus) {
+        continue;
+      }
+
+      const student = await Student.findOne({ rollNumber });
+      if (!student) continue;
+
+      const filter = { student: student._id, semester };
+      const update = {
+        rollNumber: student.rollNumber,
+        studentName: student.fullName,
+        department: student.department,
+        sgpa,
+        cgpa,
+        resultStatus
+      };
+
+      await SemesterResult.findOneAndUpdate(filter, update, { upsert: true, new: true });
+      successCount++;
+    }
+
+    req.flash("success", `Successfully processed ${successCount} semester results.`);
+    return res.redirect("/results");
+  } catch (error) {
+    req.flash("error", getErrorMessage(error, "Failed to process upload."));
     return res.redirect("/results");
   }
 });
