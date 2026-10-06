@@ -38,7 +38,7 @@
 
 ## 📸 Screenshots
 
-> Add your screenshots to a `docs/` or `public/images/` folder and update the paths below.
+
 
 | Dashboard | Marks Management |
 | :---: | :---: |
